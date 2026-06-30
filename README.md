@@ -1,136 +1,65 @@
-# FlipMate — Calcolatore Flip Vinted/eBay
+# FlipMate V2 — Reselling Margin Calculator
 
-FlipMate è una web app gratuita per calcolare margini, prezzi di vendita, offerte minime e ROI nel reselling online.
+Web app statica GitHub Pages-ready per calcolare margini di flipping/reselling e tracciare vendite.
 
-Pensata per side hustle / flipping leggero:
+## Cosa cambia nella V2
 
-- calcolo costo Vinted all-in;
-- prezzo annuncio consigliato;
-- offerta minima accettabile;
-- break-even;
-- prezzo massimo d'acquisto;
-- decisione COMPRA / TRATTA / SCARTA;
-- database vendite in locale;
-- dashboard KPI;
-- export CSV per Excel;
-- backup/import JSON.
+- Landing page pubblica con intro commerciale.
+- Video demo locale in `assets/demo.mp4`.
+- CTA **Prova gratis**.
+- Registrazione demo locale.
+- Database privato su browser tramite `localStorage`.
+- Parametri **Free**: prezzi, commissioni, spedizioni, imballi.
+- Parametri **Premium demo**: ROI minimo, utile minimo, markup, sconti, giorni liquidazione, strategie avanzate.
+- Dashboard KPI, database vendite, export CSV e backup JSON.
 
-## Demo locale
+## Importante: database privato o condiviso?
 
-Non serve installare nulla.
+Questa versione non ha backend. Ogni utente che apre il link ha un database separato e privato sul proprio browser/dispositivo.
 
-Apri direttamente:
+Quindi:
 
-```text
-index.html
-```
+- Utente A non vede i dati di Utente B.
+- Cambiando browser o PC, i dati non seguono l’utente.
+- Pulendo cache/localStorage, i dati possono sparire.
 
-Oppure pubblica il progetto con GitHub Pages.
+Per avere account veri, DB condiviso tra dispositivi e premium reale servono:
 
-## Pubblicazione GitHub Pages
+- Supabase/Firebase per Auth e Database.
+- Stripe/Lemon Squeezy/Paddle per pagamenti.
+- Backend o serverless functions per validare abbonamenti.
 
-Metodo semplice:
+## Deploy su GitHub Pages
 
-1. Crea un nuovo repository pubblico su GitHub, ad esempio `flipmate`.
-2. Carica tutti i file di questa cartella nella root del repository.
-3. Vai in **Settings → Pages**.
-4. In **Build and deployment**, scegli **Deploy from a branch**.
+1. Crea repository pubblico, es. `flipmate`.
+2. Carica tutti i file nella root del repository.
+3. Vai su `Settings > Pages`.
+4. Source: `Deploy from a branch`.
 5. Branch: `main`, folder: `/root`.
-6. Salva.
-7. GitHub genererà un link pubblico tipo:
-
-```text
-https://tuo-utente.github.io/flipmate/
-```
-
-## Stack
-
-- HTML
-- CSS
-- JavaScript vanilla
-- localStorage
-- nessun backend
-- nessuna dipendenza npm
+6. Salva e apri il link generato.
 
 ## Struttura
 
 ```text
-flipmate-vinted-ebay/
-├── index.html
-├── app.js
-├── styles.css
-├── manifest.webmanifest
-├── privacy.html
-├── terms.html
-├── assets/
-│   └── logo.svg
-├── README.md
-├── LICENSE
-└── .gitignore
+index.html
+styles.css
+app.js
+privacy.html
+terms.html
+manifest.webmanifest
+assets/logo.svg
+assets/demo.mp4
 ```
 
-## Parametri economici di default
+## Roadmap monetizzazione
 
-I parametri sono modificabili dalla schermata **Parametri**.
-
-Default iniziali:
-
-- fee eBay stimata: 5,43%;
-- fee fissa eBay: 0,35 €;
-- protezione acquisti Vinted stimata: 5% + 0,70 €;
-- spedizione Vinted default: 4,00 €;
-- spedizione addebitata al buyer eBay: 6,50 €;
-- spedizione reale venditore: 5,20 €;
-- imballo: 0,50 €;
-- utile minimo: 10 €;
-- ROI target: 25%.
-
-Aggiorna sempre questi valori se le piattaforme cambiano commissioni o condizioni.
-
-## Formula principale
-
-```text
-Utile netto = prezzo vendita + spedizione buyer - fee piattaforma - costo Vinted all-in - spedizione reale - imballo - promo
-```
-
-Costo Vinted all-in:
-
-```text
-Prezzo oggetto Vinted + fee Vinted + spedizione Vinted
-```
-
-Decisione:
-
-```text
-COMPRA = utile netto >= utile minimo e ROI >= target
-TRATTA = vicino al prezzo massimo consigliato
-SCARTA = margine insufficiente
-```
-
-## Monetizzazione possibile
-
-Roadmap consigliata:
-
-1. Pubblica gratuita su GitHub Pages.
-2. Crea contenuti SEO: guide Vinted, eBay, LEGO, action figure, carte, videogiochi retro.
-3. Aggiungi affiliate link per imballi, scatole, sleeve, bilance, stampanti etichette.
-4. Aggiungi AdSense solo quando il traffico organico è sufficiente.
-5. Fase premium futura:
-   - account cloud;
-   - storico prezzi;
-   - alert occasioni;
-   - scanner codice prodotto;
-   - template annunci eBay;
-   - stima venduti automatizzata.
-
-## Privacy
-
-La versione attuale non invia dati a server. Tutto è salvato nel browser dell'utente via `localStorage`.
+1. Validazione gratuita con utenti reali.
+2. Landing SEO e articoli verticali.
+3. Affiliate link per imballi e strumenti da seller.
+4. Backend account cloud.
+5. Premium con pagamenti reali.
+6. AdSense solo dopo traffico.
 
 ## Disclaimer
 
-Il tool è uno strumento di calcolo. Non garantisce vendite, margini o risultati fiscali. Ogni utente deve verificare commissioni, regole delle piattaforme, fiscalità e condizioni reali.
-
-## Licenza
-
-MIT.
+FlipMate non è affiliata a Vinted, eBay o altri marketplace. Le fee devono essere verificate dall’utente. Lo strumento non garantisce profitti.

@@ -3,25 +3,117 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FlipMate — Calcolatore Flip Vinted/eBay</title>
-  <meta name="description" content="Calcola margini, prezzo vendita e ROI per flip da Vinted a eBay. Traccia stock, vendite e dashboard in locale." />
-  <meta name="theme-color" content="#101828" />
+  <title>FlipMate — Calcolatore margini per reselling</title>
+  <meta name="description" content="Web app gratuita per calcolare margini, ROI e prezzo vendita nel reselling da marketplace a eBay. Database privato locale e parametri premium demo." />
+  <meta name="theme-color" content="#0b1220" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="app-shell">
+  <div id="landing" class="landing">
+    <header class="topbar">
+      <a class="brand-row" href="#">
+        <img src="assets/logo.svg" alt="FlipMate logo" />
+        <span>FlipMate</span>
+      </a>
+      <nav class="topnav">
+        <a href="#features">Funzioni</a>
+        <a href="#pricing">Prezzi</a>
+        <a href="privacy.html">Privacy</a>
+        <button class="btn ghost" id="loginBtn">Accedi</button>
+        <button class="btn primary" id="tryBtn">Prova gratis</button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="landing-hero">
+        <div class="hero-copy">
+          <span class="eyebrow">Side app per reselling online</span>
+          <h1>Prima di comprare su Vinted, calcola se il flip conviene davvero.</h1>
+          <p>FlipMate calcola costo reale, prezzo vendita consigliato, sconto minimo, break-even, utile netto e ROI. Poi traccia stock e vendite in un database privato.</p>
+          <div class="hero-ctas">
+            <button class="btn primary big" id="tryBtnHero">Prova gratis</button>
+            <a class="btn ghost big" href="#demo">Guarda demo</a>
+          </div>
+          <div class="trust-row">
+            <span>✓ Nessuna installazione</span>
+            <span>✓ GitHub Pages ready</span>
+            <span>✓ Dati locali privati</span>
+          </div>
+        </div>
+        <div class="hero-panel" id="demo">
+          <div class="video-card">
+            <div class="video-label">Video demo</div>
+            <video controls playsinline preload="metadata" poster="assets/logo.svg">
+              <source src="assets/demo.mp4" type="video/mp4" />
+              Il tuo browser non supporta il video HTML5.
+            </video>
+          </div>
+        </div>
+      </section>
+
+      <section id="features" class="feature-section">
+        <div class="section-heading">
+          <span class="eyebrow">MVP pronto</span>
+          <h2>Funzioni per validare l’idea subito</h2>
+        </div>
+        <div class="feature-grid">
+          <article><strong>Calcolatore margine</strong><p>Inserisci prezzi, fee e spedizioni. Ottieni subito COMPRA / TRATTA / SCARTA.</p></article>
+          <article><strong>Database vendite</strong><p>Traccia stock, vendita, utile, ROI, giorni in magazzino e note operative.</p></article>
+          <article><strong>Dashboard KPI</strong><p>Ricavi, utile netto, ROI medio, capitale bloccato e alert liquidazione.</p></article>
+          <article><strong>Export</strong><p>CSV per Excel e backup JSON per migrare i dati o tenerli al sicuro.</p></article>
+          <article><strong>Free settings</strong><p>Prezzi, commissioni, spedizioni e imballi sono modificabili gratis.</p></article>
+          <article><strong>Premium demo</strong><p>ROI target, utile minimo, markup, sconti e strategie avanzate sono bloccate.</p></article>
+        </div>
+      </section>
+
+      <section id="pricing" class="pricing-section">
+        <div class="section-heading">
+          <span class="eyebrow">Monetizzazione</span>
+          <h2>Free per usarla, Premium per ottimizzare</h2>
+        </div>
+        <div class="pricing-grid">
+          <article class="price-card">
+            <h3>Free</h3>
+            <p class="price">€0</p>
+            <ul>
+              <li>Calcolatore completo</li>
+              <li>Database locale vendite</li>
+              <li>Dashboard base</li>
+              <li>Modifica prezzi e commissioni</li>
+              <li>Export CSV</li>
+            </ul>
+            <button class="btn primary" id="tryBtnPricing">Prova gratis</button>
+          </article>
+          <article class="price-card highlighted">
+            <h3>Premium</h3>
+            <p class="price">Da definire</p>
+            <ul>
+              <li>ROI target personalizzato</li>
+              <li>Utile minimo personalizzato</li>
+              <li>Markup e sconto automatico</li>
+              <li>Strategie per categoria</li>
+              <li>Export avanzati e backup</li>
+            </ul>
+            <button class="btn" id="premiumInfoBtn">Vedi blocco premium</button>
+          </article>
+        </div>
+        <p class="legal-note">MVP demo: registrazione e premium sono simulati lato browser. Per incassi reali servono backend, login sicuro e pagamenti.</p>
+      </section>
+    </main>
+  </div>
+
+  <div id="app" class="app-shell hidden">
     <aside class="sidebar">
       <div class="brand">
         <img src="assets/logo.svg" alt="FlipMate logo" />
         <div>
           <strong>FlipMate</strong>
-          <span>Vinted → eBay</span>
+          <span id="planBadge">Free</span>
         </div>
       </div>
-
-      <nav class="nav" aria-label="Navigazione principale">
+      <nav class="nav" aria-label="Navigazione app">
         <button class="nav-btn active" data-tab="dashboard">Dashboard</button>
         <button class="nav-btn" data-tab="calculator">Calcolatore</button>
         <button class="nav-btn" data-tab="database">Database</button>
@@ -29,23 +121,28 @@
         <button class="nav-btn" data-tab="parameters">Parametri</button>
         <button class="nav-btn" data-tab="export">Export</button>
       </nav>
-
       <div class="side-card">
-        <span class="eyebrow">Regola base</span>
-        <p>Compra solo se l’utile netto è ≥ al minimo richiesto e il ROI supera il target.</p>
+        <span class="eyebrow">Account</span>
+        <p id="userSummary">Demo locale</p>
+        <button class="btn small" id="upgradeDemoBtn">Attiva Premium demo</button>
+        <button class="btn small ghost" id="logoutBtn">Esci</button>
+      </div>
+      <div class="side-card muted-card">
+        <span class="eyebrow">Database</span>
+        <p>Privato: salvato solo su questo browser. Non è condiviso tra utenti.</p>
       </div>
     </aside>
 
     <main class="main">
-      <header class="hero">
+      <header class="hero compact-hero">
         <div>
-          <span class="eyebrow">Side app per flipping</span>
-          <h1>Calcola se conviene comprare su Vinted e rivendere su eBay.</h1>
-          <p>Prezzo target, sconto accettabile, break-even, prezzo massimo d’acquisto e database vendite. Tutto salvato nel browser.</p>
+          <span class="eyebrow">Area app</span>
+          <h1>Calcola, traccia, vendi.</h1>
+          <p>Usa il modello su ogni acquisto: se non supera utile e ROI target, scarta o tratta.</p>
         </div>
         <div class="hero-actions">
-          <button class="btn primary" id="jumpToCalc">Nuovo calcolo</button>
-          <button class="btn ghost" id="seedDemo">Carica demo</button>
+          <button class="btn primary" data-tab-jump="calculator">Nuovo calcolo</button>
+          <button class="btn" id="seedDemo">Carica demo</button>
         </div>
       </header>
 
@@ -56,212 +153,86 @@
           <article class="card kpi"><span>ROI medio</span><strong id="kpiRoi">0%</strong></article>
           <article class="card kpi"><span>Stock attivo</span><strong id="kpiStock">€0,00</strong></article>
         </div>
-
         <div class="grid two">
-          <article class="card">
-            <div class="card-header">
-              <div>
-                <span class="eyebrow">Sintesi</span>
-                <h2>Performance</h2>
-              </div>
-            </div>
-            <div class="metrics-list" id="performanceList"></div>
-          </article>
-
-          <article class="card sponsor-card">
-            <span class="eyebrow">Monetizzazione futura</span>
-            <h2>Spazio sponsor / affiliazioni</h2>
-            <p>Qui puoi integrare AdSense, affiliate link per imballi, etichette, assicurazioni spedizione o tool premium.</p>
-            <button class="btn small" data-tab-jump="export">Vedi roadmap</button>
-          </article>
+          <article class="card"><span class="eyebrow">Sintesi</span><h2>Performance</h2><div class="metrics-list" id="performanceList"></div></article>
+          <article class="card sponsor-card"><span class="eyebrow">Monetizzazione</span><h2>Spazio affiliate / sponsor</h2><p>Area pronta per link affiliati ad imballi, bilancia, etichette, sleeve e prodotti per spedizione.</p><button class="btn small" data-tab-jump="export">Roadmap</button></article>
         </div>
-
-        <article class="card">
-          <div class="card-header">
-            <div>
-              <span class="eyebrow">Alert</span>
-              <h2>Pezzi da controllare</h2>
-            </div>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Prodotto</th><th>Categoria</th><th>Status</th><th>Giorni</th><th>Utile stimato</th><th>Azione</th>
-                </tr>
-              </thead>
-              <tbody id="alertsBody"></tbody>
-            </table>
-          </div>
-        </article>
+        <article class="card"><span class="eyebrow">Alert</span><h2>Pezzi da controllare</h2><div class="table-wrap"><table><thead><tr><th>Prodotto</th><th>Categoria</th><th>Status</th><th>Giorni</th><th>Utile stimato</th><th>Azione</th></tr></thead><tbody id="alertsBody"></tbody></table></div></article>
       </section>
 
       <section id="calculator" class="tab">
         <div class="grid two calc-layout">
           <article class="card">
-            <div class="card-header">
-              <div>
-                <span class="eyebrow">Input</span>
-                <h2>Nuovo calcolo</h2>
-              </div>
-              <button class="btn small" id="resetCalc">Reset</button>
-            </div>
-
+            <div class="card-header"><div><span class="eyebrow">Input</span><h2>Nuovo calcolo</h2></div><button class="btn small" id="resetCalc">Reset</button></div>
             <form id="calcForm" class="form-grid">
-              <label>Nome prodotto
-                <input id="calcName" type="text" placeholder="Es. Banpresto SSJ3 Goku Match Makers" />
-              </label>
-              <label>Categoria
-                <select id="calcCategory"></select>
-              </label>
-              <label>Prezzo medio venduto eBay
-                <input id="soldAvg" type="number" min="0" step="0.01" value="40" />
-              </label>
-              <label>Prezzo oggetto Vinted
-                <input id="vintedPrice" type="number" min="0" step="0.01" value="20" />
-              </label>
-              <label>Spedizione Vinted
-                <input id="vintedShipping" type="number" min="0" step="0.01" />
-              </label>
-              <label>Spedizione addebitata al buyer eBay
-                <input id="buyerShipping" type="number" min="0" step="0.01" />
-              </label>
-              <label>Spedizione reale tua
-                <input id="realShipping" type="number" min="0" step="0.01" />
-              </label>
-              <label>Imballo
-                <input id="packCost" type="number" min="0" step="0.01" />
-              </label>
-              <label>Promo eBay %
-                <input id="promoPct" type="number" min="0" max="30" step="0.1" />
-              </label>
-              <label>Markup annuncio %
-                <input id="markupPct" type="number" min="0" max="50" step="0.1" />
-              </label>
+              <label>Nome prodotto<input id="calcName" type="text" placeholder="Es. Banpresto SSJ3 Goku" /></label>
+              <label>Categoria<select id="calcCategory"></select></label>
+              <label>Prezzo medio venduto eBay<input id="soldAvg" type="number" min="0" step="0.01" value="40" /></label>
+              <label>Prezzo oggetto Vinted<input id="vintedPrice" type="number" min="0" step="0.01" value="20" /></label>
+              <label>Spedizione Vinted<input id="vintedShipping" type="number" min="0" step="0.01" /></label>
+              <label>Spedizione pagata dal buyer<input id="buyerShipping" type="number" min="0" step="0.01" /></label>
+              <label>Spedizione reale tua<input id="realShipping" type="number" min="0" step="0.01" /></label>
+              <label>Imballo<input id="packCost" type="number" min="0" step="0.01" /></label>
+              <label class="premium-input">Promo eBay % <span class="pill premium-pill">Premium</span><input id="promoPct" type="number" min="0" max="30" step="0.1" /></label>
+              <label class="premium-input">Markup annuncio % <span class="pill premium-pill">Premium</span><input id="markupPct" type="number" min="0" max="50" step="0.1" /></label>
             </form>
-
-            <div class="actions-row">
-              <button class="btn primary" id="saveFromCalc">Salva nel database</button>
-              <button class="btn" id="copyCalc">Copia sintesi</button>
-            </div>
+            <div class="actions-row"><button class="btn primary" id="saveFromCalc">Salva nel database</button><button class="btn" id="copyCalc">Copia sintesi</button></div>
+            <p class="muted">Nel piano Free i campi premium usano il default. In questa V2 il blocco è dimostrativo.</p>
           </article>
-
           <article class="card result-card">
-            <div class="verdict" id="verdictBox">
-              <span>Decisione</span>
-              <strong id="decision">—</strong>
-              <p id="decisionReason">Inserisci i dati per calcolare.</p>
-            </div>
-
+            <div class="verdict" id="verdictBox"><span>Decisione</span><strong id="decision">—</strong><p id="decisionReason">Inserisci i dati per calcolare.</p></div>
             <div class="result-grid">
               <div><span>Costo Vinted all-in</span><strong id="outAllIn">€0,00</strong></div>
               <div><span>Fair value prudente</span><strong id="outFair">€0,00</strong></div>
               <div><span>Prezzo annuncio</span><strong id="outListing">€0,00</strong></div>
-              <div><span>Offerta minima accettabile</span><strong id="outMinOffer">€0,00</strong></div>
-              <div><span>Break-even vendita</span><strong id="outBreakEven">€0,00</strong></div>
+              <div><span>Offerta minima</span><strong id="outMinOffer">€0,00</strong></div>
+              <div><span>Break-even</span><strong id="outBreakEven">€0,00</strong></div>
               <div><span>Max prezzo Vinted</span><strong id="outMaxBuy">€0,00</strong></div>
               <div><span>Utile netto target</span><strong id="outProfit">€0,00</strong></div>
               <div><span>ROI stimato</span><strong id="outRoi">0%</strong></div>
             </div>
-
-            <details class="formula-box">
-              <summary>Formula usata</summary>
-              <pre>Utile netto = prezzo vendita + spedizione buyer - fee piattaforma - costo Vinted all-in - spedizione reale - imballo - promo</pre>
-            </details>
+            <details class="formula-box"><summary>Formula</summary><pre>Utile netto = prezzo vendita + spedizione buyer - fee eBay - costo Vinted all-in - spedizione reale - imballo - promo</pre></details>
           </article>
         </div>
       </section>
 
       <section id="database" class="tab">
-        <article class="card">
-          <div class="card-header">
-            <div>
-              <span class="eyebrow">Tracking</span>
-              <h2>Database vendite</h2>
-            </div>
-            <div class="actions-row compact">
-              <button class="btn small" id="addManual">Aggiungi riga</button>
-              <button class="btn small danger" id="clearDb">Svuota DB</button>
-            </div>
-          </div>
-
-          <div class="table-wrap">
-            <table class="editable-table">
-              <thead>
-                <tr>
-                  <th>Prodotto</th><th>Categoria</th><th>Status</th><th>Acquisto</th><th>Listino</th><th>Vendita</th><th>Utile</th><th>ROI</th><th>Data acquisto</th><th>Data vendita</th><th>Note</th><th></th>
-                </tr>
-              </thead>
-              <tbody id="dbBody"></tbody>
-            </table>
-          </div>
-        </article>
+        <article class="card"><div class="card-header"><div><span class="eyebrow">Tracking</span><h2>Database vendite</h2></div><div class="actions-row compact"><button class="btn small" id="addManual">Aggiungi riga</button><button class="btn small danger" id="clearDb">Svuota DB</button></div></div><div class="table-wrap"><table class="editable-table"><thead><tr><th>Prodotto</th><th>Categoria</th><th>Status</th><th>Acquisto</th><th>Listino</th><th>Vendita</th><th>Utile</th><th>ROI</th><th>Acquisto il</th><th>Vendita il</th><th>Note</th><th></th></tr></thead><tbody id="dbBody"></tbody></table></div></article>
       </section>
 
       <section id="categories" class="tab">
-        <article class="card">
-          <div class="card-header">
-            <div>
-              <span class="eyebrow">Sourcing</span>
-              <h2>Categorie e regole</h2>
-            </div>
-          </div>
-          <div class="category-grid" id="categoryCards"></div>
-        </article>
+        <article class="card"><div class="card-header"><div><span class="eyebrow">Sourcing</span><h2>Categorie e regole</h2></div><span class="pill premium-pill">Strategie avanzate Premium</span></div><div class="category-grid" id="categoryCards"></div></article>
       </section>
 
       <section id="parameters" class="tab">
-        <article class="card">
-          <div class="card-header">
-            <div>
-              <span class="eyebrow">Config</span>
-              <h2>Parametri economici</h2>
-            </div>
-            <button class="btn small" id="resetParams">Ripristina default</button>
-          </div>
-
-          <form id="paramsForm" class="form-grid param-grid"></form>
-          <p class="muted">Modifica questi valori se cambiano fee, spedizioni, imballi o target margine. I dati restano nel tuo browser.</p>
-        </article>
+        <article class="card"><div class="card-header"><div><span class="eyebrow">Config</span><h2>Parametri economici</h2></div><button class="btn small" id="resetParams">Ripristina default</button></div><div class="settings-info"><strong>Free:</strong> prezzi, commissioni, spedizioni, imballi. <strong>Premium:</strong> ROI, utile minimo, markup, sconto, liquidazione stock e strategie.</div><form id="paramsForm" class="form-grid param-grid"></form></article>
       </section>
 
       <section id="export" class="tab">
         <div class="grid two">
-          <article class="card">
-            <span class="eyebrow">Backup</span>
-            <h2>Export / Import</h2>
-            <p>Esporta il database per Excel o salva un backup JSON completo.</p>
-            <div class="actions-row wrap">
-              <button class="btn primary" id="exportCsv">Scarica CSV</button>
-              <button class="btn" id="exportJson">Scarica JSON</button>
-              <label class="btn file-label">Import JSON<input id="importJson" type="file" accept="application/json" hidden /></label>
-            </div>
-          </article>
-
-          <article class="card">
-            <span class="eyebrow">Roadmap business</span>
-            <h2>Come monetizzarla</h2>
-            <ol class="roadmap">
-              <li>Free app pubblica con calculator + DB locale.</li>
-              <li>SEO: guide “come vendere su Vinted/eBay”, categorie, tool gratuiti.</li>
-              <li>Affiliate: imballi, etichette, bilance, sleeve, box protettivi.</li>
-              <li>Premium futuro: account cloud, scan codice prodotto, alert prezzo, storico venduti.</li>
-              <li>Ads leggeri solo dopo traffico organico.</li>
-            </ol>
-          </article>
+          <article class="card"><span class="eyebrow">Backup</span><h2>Export / Import</h2><p>Esporta CSV per Excel o backup JSON completo.</p><div class="actions-row wrap"><button class="btn primary" id="exportCsv">Scarica CSV</button><button class="btn" id="exportJson">Scarica JSON</button><label class="btn file-label">Import JSON<input id="importJson" type="file" accept="application/json" hidden /></label></div></article>
+          <article class="card"><span class="eyebrow">Roadmap</span><h2>Da MVP a SaaS</h2><ol class="roadmap"><li>Pubblica su GitHub Pages</li><li>Valida con 50-100 utenti</li><li>Aggiungi landing SEO</li><li>Integra Supabase Auth + DB</li><li>Integra Stripe per Premium</li><li>Affiliate e AdSense solo dopo traffico</li></ol></article>
         </div>
-
-        <article class="card">
-          <span class="eyebrow">Privacy</span>
-          <h2>Pronta per GitHub Pages</h2>
-          <p>Nessun backend. Nessun dato inviato a server. Tutto vive in <code>localStorage</code>. Puoi pubblicarla subito come progetto open source e aggiungere un backend solo in fase 2.</p>
-          <p><a href="privacy.html">Privacy</a> · <a href="terms.html">Termini</a></p>
-        </article>
       </section>
     </main>
   </div>
 
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div id="authModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <button class="modal-close" id="closeAuth" aria-label="Chiudi">×</button>
+      <span class="eyebrow">Prova gratis</span>
+      <h2>Crea il tuo workspace FlipMate</h2>
+      <p>Registrazione demo locale: i dati restano nel tuo browser. Per account reali servirà backend.</p>
+      <form id="authForm" class="form-grid single">
+        <label>Nome<input id="authName" type="text" placeholder="Alessandro" required /></label>
+        <label>Email<input id="authEmail" type="email" placeholder="nome@email.com" required /></label>
+        <label><input id="acceptTerms" type="checkbox" required /> Accetto privacy e termini demo</label>
+        <button class="btn primary" type="submit">Entra gratis</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
   <script src="app.js"></script>
 </body>
 </html>

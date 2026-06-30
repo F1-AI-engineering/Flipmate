@@ -1,15 +1,14 @@
 {
-  "name": "FlipMate — Vinted eBay Calculator",
+  "name": "FlipMate",
   "short_name": "FlipMate",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0b1020",
-  "theme_color": "#101828",
-  "description": "Calcolatore margini e database vendite per flipping Vinted/eBay.",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
   "icons": [
     {
       "src": "assets/logo.svg",
-      "sizes": "any",
+      "sizes": "96x96",
       "type": "image/svg+xml"
     }
   ]
