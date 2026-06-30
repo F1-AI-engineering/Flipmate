@@ -1,6 +1,6 @@
 # FlipMate — Calcolatore Flip Vinted/eBay
 
-Web app statica per valutare se conviene comprare un prodotto su Vinted e rivenderlo su eBay.
+FlipMate è una web app gratuita per calcolare margini, prezzi di vendita, offerte minime e ROI nel reselling online.
 
 Pensata per side hustle / flipping leggero:
 
