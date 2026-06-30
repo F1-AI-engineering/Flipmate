@@ -1,15 +1,10 @@
 {
   "name": "FlipMate",
   "short_name": "FlipMate",
+  "description": "Calcolatore margini per reselling online",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0b1220",
   "theme_color": "#0b1220",
-  "icons": [
-    {
-      "src": "assets/logo.svg",
-      "sizes": "96x96",
-      "type": "image/svg+xml"
-    }
-  ]
+  "icons": [{"src":"assets/logo.svg","sizes":"any","type":"image/svg+xml"}]
 }

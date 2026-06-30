@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FlipMate — Calcolatore margini per reselling</title>
-  <meta name="description" content="Web app gratuita per calcolare margini, ROI e prezzo vendita nel reselling da marketplace a eBay. Database privato locale e parametri premium demo." />
+  <meta name="description" content="Calcolatore gratuito per capire se conviene comprare su marketplace e rivendere online. Database vendite, dashboard ed export dopo registrazione." />
   <meta name="theme-color" content="#0b1220" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
@@ -13,93 +13,152 @@
 <body>
   <div id="landing" class="landing">
     <header class="topbar">
-      <a class="brand-row" href="#">
+      <a class="brand-row" href="#top" aria-label="FlipMate home">
         <img src="assets/logo.svg" alt="FlipMate logo" />
         <span>FlipMate</span>
       </a>
-      <nav class="topnav">
-        <a href="#features">Funzioni</a>
+      <nav class="topnav" aria-label="Navigazione principale">
+        <a href="#demo">Demo</a>
+        <a href="#free-calculator">Calcolatore free</a>
         <a href="#pricing">Prezzi</a>
-        <a href="privacy.html">Privacy</a>
-        <button class="btn ghost" id="loginBtn">Accedi</button>
-        <button class="btn primary" id="tryBtn">Prova gratis</button>
+        <button class="btn ghost" data-auth-open="login">Accedi</button>
+        <button class="btn primary" data-scroll-target="free-calculator">Prova gratis</button>
       </nav>
     </header>
 
-    <main>
+    <main id="top">
       <section class="landing-hero">
         <div class="hero-copy">
           <span class="eyebrow">Side app per reselling online</span>
           <h1>Prima di comprare su Vinted, calcola se il flip conviene davvero.</h1>
-          <p>FlipMate calcola costo reale, prezzo vendita consigliato, sconto minimo, break-even, utile netto e ROI. Poi traccia stock e vendite in un database privato.</p>
+          <p>Prova gratis il calcolatore margini. Per salvare prodotti, usare il database vendite, dashboard, CSV e backup serve la registrazione gratuita.</p>
           <div class="hero-ctas">
-            <button class="btn primary big" id="tryBtnHero">Prova gratis</button>
-            <a class="btn ghost big" href="#demo">Guarda demo</a>
+            <button class="btn primary big" data-scroll-target="free-calculator">Prova gratis il calcolatore</button>
+            <button class="btn ghost big" data-auth-open="signup">Registrati gratis</button>
           </div>
           <div class="trust-row">
-            <span>✓ Nessuna installazione</span>
-            <span>✓ GitHub Pages ready</span>
-            <span>✓ Dati locali privati</span>
+            <span>✓ Calcolatore free pubblico</span>
+            <span>✓ DB privato dopo login</span>
+            <span>✓ Nessun backend nella demo</span>
           </div>
         </div>
+
         <div class="hero-panel" id="demo">
           <div class="video-card">
             <div class="video-label">Video demo</div>
-            <video controls playsinline preload="metadata" poster="assets/logo.svg">
+            <video id="demoVideo" autoplay muted loop playsinline controls preload="auto" poster="assets/logo.svg" aria-label="Video demo FlipMate">
               <source src="assets/demo.mp4" type="video/mp4" />
               Il tuo browser non supporta il video HTML5.
             </video>
+            <p class="video-note">Autoplay attivo in modalità silenziosa. Per sentire l’audio usa i controlli del video.</p>
           </div>
+        </div>
+      </section>
+
+      <section id="free-calculator" class="public-calc-section">
+        <div class="section-heading left">
+          <span class="eyebrow">Prova gratuita</span>
+          <h2>Calcolatore free senza registrazione</h2>
+          <p>Modifica prezzi, commissioni e spedizioni. Il salvataggio nel DB e l’export richiedono registrazione.</p>
+        </div>
+        <div class="grid two calc-layout">
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <span class="eyebrow">Input free</span>
+                <h3>Simula un acquisto</h3>
+              </div>
+              <button class="btn small" id="publicReset">Reset</button>
+            </div>
+            <form id="publicCalcForm" class="form-grid">
+              <label>Prezzo medio venduto eBay<input id="pSoldAvg" type="number" min="0" step="0.01" value="40"></label>
+              <label>Prezzo oggetto Vinted<input id="pVintedPrice" type="number" min="0" step="0.01" value="20"></label>
+              <label>Spedizione Vinted<input id="pVintedShipping" type="number" min="0" step="0.01" value="4"></label>
+              <label>Spedizione pagata dal buyer<input id="pBuyerShipping" type="number" min="0" step="0.01" value="6.5"></label>
+              <label>Spedizione reale tua<input id="pRealShipping" type="number" min="0" step="0.01" value="5.2"></label>
+              <label>Imballo<input id="pPackCost" type="number" min="0" step="0.01" value="0.5"></label>
+              <label>Commissione eBay %<input id="pEbayFeePct" type="number" min="0" step="0.01" value="5"></label>
+              <label>Tariffa regolatoria %<input id="pRegPct" type="number" min="0" step="0.01" value="0.43"></label>
+              <label>Fee fissa eBay €<input id="pEbayFixed" type="number" min="0" step="0.01" value="0.35"></label>
+              <label>Protezione Vinted %<input id="pVintedPct" type="number" min="0" step="0.01" value="5"></label>
+              <label>Protezione Vinted fissa €<input id="pVintedFixed" type="number" min="0" step="0.01" value="0.70"></label>
+              <label class="premium-preview">ROI target <span class="pill premium-pill">Premium</span><input value="25%" disabled></label>
+            </form>
+            <div class="actions-row wrap">
+              <button class="btn primary" id="publicSaveDb">Salva nel DB</button>
+              <button class="btn" id="publicCopy">Copia sintesi</button>
+              <button class="btn ghost" id="publicExportCsv">Scarica CSV</button>
+            </div>
+            <p class="muted">Questa prova non salva dati. Per DB, dashboard ed export serve registrazione gratuita.</p>
+          </article>
+
+          <article class="card result-card">
+            <div class="verdict" id="publicVerdictBox">
+              <span>Decisione</span>
+              <strong id="publicDecision">—</strong>
+              <p id="publicDecisionReason">Inserisci i dati per calcolare.</p>
+            </div>
+            <div class="result-grid">
+              <div><span>Costo Vinted all-in</span><strong id="pOutAllIn">€0,00</strong></div>
+              <div><span>Fair value prudente</span><strong id="pOutFair">€0,00</strong></div>
+              <div><span>Prezzo annuncio</span><strong id="pOutListing">€0,00</strong></div>
+              <div><span>Offerta minima</span><strong id="pOutMinOffer">€0,00</strong></div>
+              <div><span>Break-even</span><strong id="pOutBreakEven">€0,00</strong></div>
+              <div><span>Max prezzo Vinted</span><strong id="pOutMaxBuy">€0,00</strong></div>
+              <div><span>Utile netto stimato</span><strong id="pOutProfit">€0,00</strong></div>
+              <div><span>ROI stimato</span><strong id="pOutRoi">0%</strong></div>
+            </div>
+          </article>
         </div>
       </section>
 
       <section id="features" class="feature-section">
         <div class="section-heading">
-          <span class="eyebrow">MVP pronto</span>
-          <h2>Funzioni per validare l’idea subito</h2>
+          <span class="eyebrow">Come funziona</span>
+          <h2>Free per calcolare, account per tracciare</h2>
         </div>
         <div class="feature-grid">
-          <article><strong>Calcolatore margine</strong><p>Inserisci prezzi, fee e spedizioni. Ottieni subito COMPRA / TRATTA / SCARTA.</p></article>
-          <article><strong>Database vendite</strong><p>Traccia stock, vendita, utile, ROI, giorni in magazzino e note operative.</p></article>
-          <article><strong>Dashboard KPI</strong><p>Ricavi, utile netto, ROI medio, capitale bloccato e alert liquidazione.</p></article>
-          <article><strong>Export</strong><p>CSV per Excel e backup JSON per migrare i dati o tenerli al sicuro.</p></article>
-          <article><strong>Free settings</strong><p>Prezzi, commissioni, spedizioni e imballi sono modificabili gratis.</p></article>
-          <article><strong>Premium demo</strong><p>ROI target, utile minimo, markup, sconti e strategie avanzate sono bloccate.</p></article>
+          <article><strong>Calcolatore pubblico</strong><p>Chiunque può provare il calcolo margine senza lasciare email.</p></article>
+          <article><strong>Registrazione gratuita</strong><p>Necessaria per salvare prodotti nel database locale e accedere alla dashboard.</p></article>
+          <article><strong>DB privato locale</strong><p>Ogni browser ha il proprio database. Gli utenti non condividono dati tra loro.</p></article>
+          <article><strong>Export protetto</strong><p>CSV, JSON e import backup sono disponibili solo dopo registrazione.</p></article>
+          <article><strong>Settings free</strong><p>Prezzi, fee, spedizioni e imballi sono modificabili gratis.</p></article>
+          <article><strong>Premium demo</strong><p>ROI, utile minimo, markup, sconti e liquidazione stock sono parametri avanzati.</p></article>
         </div>
       </section>
 
       <section id="pricing" class="pricing-section">
         <div class="section-heading">
-          <span class="eyebrow">Monetizzazione</span>
-          <h2>Free per usarla, Premium per ottimizzare</h2>
+          <span class="eyebrow">Modello</span>
+          <h2>Monetizzazione pulita</h2>
         </div>
         <div class="pricing-grid">
           <article class="price-card">
             <h3>Free</h3>
             <p class="price">€0</p>
             <ul>
-              <li>Calcolatore completo</li>
-              <li>Database locale vendite</li>
-              <li>Dashboard base</li>
+              <li>Calcolatore pubblico</li>
               <li>Modifica prezzi e commissioni</li>
-              <li>Export CSV</li>
+              <li>Registrazione gratuita</li>
+              <li>Database locale vendite</li>
+              <li>Export CSV base</li>
             </ul>
-            <button class="btn primary" id="tryBtnPricing">Prova gratis</button>
+            <button class="btn primary" data-scroll-target="free-calculator">Prova gratis</button>
           </article>
           <article class="price-card highlighted">
             <h3>Premium</h3>
-            <p class="price">Da definire</p>
+            <p class="price">Da validare</p>
             <ul>
               <li>ROI target personalizzato</li>
               <li>Utile minimo personalizzato</li>
-              <li>Markup e sconto automatico</li>
-              <li>Strategie per categoria</li>
-              <li>Export avanzati e backup</li>
+              <li>Markup e sconto offerta</li>
+              <li>Giorni liquidazione stock</li>
+              <li>Strategie avanzate per categoria</li>
             </ul>
-            <button class="btn" id="premiumInfoBtn">Vedi blocco premium</button>
+            <button class="btn" data-auth-open="signup">Registrati e guarda</button>
           </article>
         </div>
-        <p class="legal-note">MVP demo: registrazione e premium sono simulati lato browser. Per incassi reali servono backend, login sicuro e pagamenti.</p>
+        <p class="legal-note">Questa versione GitHub Pages è un MVP frontend. Login e Premium sono demo locali, non sicurezza reale.</p>
       </section>
     </main>
   </div>
@@ -125,6 +184,7 @@
         <span class="eyebrow">Account</span>
         <p id="userSummary">Demo locale</p>
         <button class="btn small" id="upgradeDemoBtn">Attiva Premium demo</button>
+        <button class="btn small ghost" id="backLandingBtn">Landing</button>
         <button class="btn small ghost" id="logoutBtn">Esci</button>
       </div>
       <div class="side-card muted-card">
@@ -136,9 +196,9 @@
     <main class="main">
       <header class="hero compact-hero">
         <div>
-          <span class="eyebrow">Area app</span>
-          <h1>Calcola, traccia, vendi.</h1>
-          <p>Usa il modello su ogni acquisto: se non supera utile e ROI target, scarta o tratta.</p>
+          <span class="eyebrow">Area riservata free</span>
+          <h1>Dashboard, database ed export.</h1>
+          <p>Questa sezione richiede registrazione gratuita. I dati restano nel browser nella versione MVP.</p>
         </div>
         <div class="hero-actions">
           <button class="btn primary" data-tab-jump="calculator">Nuovo calcolo</button>
@@ -177,7 +237,7 @@
               <label class="premium-input">Markup annuncio % <span class="pill premium-pill">Premium</span><input id="markupPct" type="number" min="0" max="50" step="0.1" /></label>
             </form>
             <div class="actions-row"><button class="btn primary" id="saveFromCalc">Salva nel database</button><button class="btn" id="copyCalc">Copia sintesi</button></div>
-            <p class="muted">Nel piano Free i campi premium usano il default. In questa V2 il blocco è dimostrativo.</p>
+            <p class="muted">Free: prezzi, fee e spedizioni. Premium demo: parametri avanzati di strategia.</p>
           </article>
           <article class="card result-card">
             <div class="verdict" id="verdictBox"><span>Decisione</span><strong id="decision">—</strong><p id="decisionReason">Inserisci i dati per calcolare.</p></div>
@@ -196,7 +256,7 @@
         </div>
       </section>
 
-      <section id="database" class="tab">
+      <section id="database" class="tab protected-tab">
         <article class="card"><div class="card-header"><div><span class="eyebrow">Tracking</span><h2>Database vendite</h2></div><div class="actions-row compact"><button class="btn small" id="addManual">Aggiungi riga</button><button class="btn small danger" id="clearDb">Svuota DB</button></div></div><div class="table-wrap"><table class="editable-table"><thead><tr><th>Prodotto</th><th>Categoria</th><th>Status</th><th>Acquisto</th><th>Listino</th><th>Vendita</th><th>Utile</th><th>ROI</th><th>Acquisto il</th><th>Vendita il</th><th>Note</th><th></th></tr></thead><tbody id="dbBody"></tbody></table></div></article>
       </section>
 
@@ -208,10 +268,10 @@
         <article class="card"><div class="card-header"><div><span class="eyebrow">Config</span><h2>Parametri economici</h2></div><button class="btn small" id="resetParams">Ripristina default</button></div><div class="settings-info"><strong>Free:</strong> prezzi, commissioni, spedizioni, imballi. <strong>Premium:</strong> ROI, utile minimo, markup, sconto, liquidazione stock e strategie.</div><form id="paramsForm" class="form-grid param-grid"></form></article>
       </section>
 
-      <section id="export" class="tab">
+      <section id="export" class="tab protected-tab">
         <div class="grid two">
-          <article class="card"><span class="eyebrow">Backup</span><h2>Export / Import</h2><p>Esporta CSV per Excel o backup JSON completo.</p><div class="actions-row wrap"><button class="btn primary" id="exportCsv">Scarica CSV</button><button class="btn" id="exportJson">Scarica JSON</button><label class="btn file-label">Import JSON<input id="importJson" type="file" accept="application/json" hidden /></label></div></article>
-          <article class="card"><span class="eyebrow">Roadmap</span><h2>Da MVP a SaaS</h2><ol class="roadmap"><li>Pubblica su GitHub Pages</li><li>Valida con 50-100 utenti</li><li>Aggiungi landing SEO</li><li>Integra Supabase Auth + DB</li><li>Integra Stripe per Premium</li><li>Affiliate e AdSense solo dopo traffico</li></ol></article>
+          <article class="card"><span class="eyebrow">Backup</span><h2>Export / Import</h2><p>CSV, JSON e import sono disponibili dopo registrazione gratuita.</p><div class="actions-row wrap"><button class="btn primary" id="exportCsv">Scarica CSV</button><button class="btn" id="exportJson">Scarica JSON</button><label class="btn file-label">Import JSON<input id="importJson" type="file" accept="application/json" hidden /></label></div></article>
+          <article class="card"><span class="eyebrow">Roadmap</span><h2>Da MVP a SaaS</h2><ol class="roadmap"><li>Pubblica su GitHub Pages</li><li>Valida con 50-100 utenti</li><li>Aggiungi landing SEO</li><li>Integra Supabase Auth + DB</li><li>Integra Stripe per Premium</li><li>Affiliate e AdSense dopo traffico</li></ol></article>
         </div>
       </section>
     </main>
@@ -220,13 +280,13 @@
   <div id="authModal" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modal-card">
       <button class="modal-close" id="closeAuth" aria-label="Chiudi">×</button>
-      <span class="eyebrow">Prova gratis</span>
-      <h2>Crea il tuo workspace FlipMate</h2>
-      <p>Registrazione demo locale: i dati restano nel tuo browser. Per account reali servirà backend.</p>
+      <span class="eyebrow" id="authEyebrow">Registrazione gratuita</span>
+      <h2 id="authTitle">Crea il tuo workspace FlipMate</h2>
+      <p id="authText">Serve per salvare prodotti nel DB, vedere dashboard ed esportare CSV. In questa MVP i dati restano nel browser.</p>
       <form id="authForm" class="form-grid single">
         <label>Nome<input id="authName" type="text" placeholder="Alessandro" required /></label>
         <label>Email<input id="authEmail" type="email" placeholder="nome@email.com" required /></label>
-        <label><input id="acceptTerms" type="checkbox" required /> Accetto privacy e termini demo</label>
+        <label class="checkbox-label"><input id="acceptTerms" type="checkbox" required /> Accetto privacy e termini demo</label>
         <button class="btn primary" type="submit">Entra gratis</button>
       </form>
     </div>

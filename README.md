@@ -1,65 +1,58 @@
-# FlipMate V2 — Reselling Margin Calculator
+# FlipMate V3 — Reselling Margin Calculator
 
-Web app statica GitHub Pages-ready per calcolare margini di flipping/reselling e tracciare vendite.
+Web app statica GitHub Pages ready per calcolare margini nel reselling online.
 
-## Cosa cambia nella V2
+## Novità V3
 
-- Landing page pubblica con intro commerciale.
-- Video demo locale in `assets/demo.mp4`.
-- CTA **Prova gratis**.
-- Registrazione demo locale.
-- Database privato su browser tramite `localStorage`.
-- Parametri **Free**: prezzi, commissioni, spedizioni, imballi.
-- Parametri **Premium demo**: ROI minimo, utile minimo, markup, sconti, giorni liquidazione, strategie avanzate.
-- Dashboard KPI, database vendite, export CSV e backup JSON.
-
-## Importante: database privato o condiviso?
-
-Questa versione non ha backend. Ogni utente che apre il link ha un database separato e privato sul proprio browser/dispositivo.
-
-Quindi:
-
-- Utente A non vede i dati di Utente B.
-- Cambiando browser o PC, i dati non seguono l’utente.
-- Pulendo cache/localStorage, i dati possono sparire.
-
-Per avere account veri, DB condiviso tra dispositivi e premium reale servono:
-
-- Supabase/Firebase per Auth e Database.
-- Stripe/Lemon Squeezy/Paddle per pagamenti.
-- Backend o serverless functions per validare abbonamenti.
+- Landing page pubblica.
+- Video demo con autoplay silenzioso (`autoplay muted loop playsinline`).
+- Calcolatore Free visibile senza registrazione.
+- Registrazione gratuita demo richiesta per:
+  - database vendite;
+  - dashboard KPI;
+  - salvataggio prodotto;
+  - export CSV;
+  - backup/import JSON.
+- Parametri Free modificabili:
+  - prezzi;
+  - commissioni;
+  - spedizioni;
+  - imballi.
+- Parametri Premium demo bloccati:
+  - ROI minimo;
+  - utile minimo;
+  - markup;
+  - sconto offerta;
+  - giorni liquidazione;
+  - strategie avanzate categoria.
 
 ## Deploy su GitHub Pages
 
-1. Crea repository pubblico, es. `flipmate`.
-2. Carica tutti i file nella root del repository.
-3. Vai su `Settings > Pages`.
+1. Crea un repository pubblico, per esempio `flipmate`.
+2. Carica nella root del repository questi file estratti, non lo ZIP:
+   - `index.html`
+   - `app.js`
+   - `styles.css`
+   - `privacy.html`
+   - `terms.html`
+   - `manifest.webmanifest`
+   - cartella `assets/`
+3. Vai in `Settings → Pages`.
 4. Source: `Deploy from a branch`.
 5. Branch: `main`, folder: `/root`.
-6. Salva e apri il link generato.
+6. Salva.
 
-## Struttura
+## Nota tecnica
 
-```text
-index.html
-styles.css
-app.js
-privacy.html
-terms.html
-manifest.webmanifest
-assets/logo.svg
-assets/demo.mp4
-```
+Questa versione non ha backend. La registrazione è demo locale: i dati vengono salvati nel `localStorage` del browser. Quindi ogni utente ha un database privato nel proprio browser/dispositivo.
 
-## Roadmap monetizzazione
+Per rendere login, Premium e dati multi-device reali servono:
 
-1. Validazione gratuita con utenti reali.
-2. Landing SEO e articoli verticali.
-3. Affiliate link per imballi e strumenti da seller.
-4. Backend account cloud.
-5. Premium con pagamenti reali.
-6. AdSense solo dopo traffico.
+- Supabase Auth;
+- Supabase Database;
+- Stripe per pagamenti;
+- hosting tipo Vercel/Netlify.
 
-## Disclaimer
+## Licenza
 
-FlipMate non è affiliata a Vinted, eBay o altri marketplace. Le fee devono essere verificate dall’utente. Lo strumento non garantisce profitti.
+MVP dimostrativo. Evitare uso di loghi ufficiali Vinted/eBay e non presentare l'app come affiliata o ufficiale.
