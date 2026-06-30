@@ -112,6 +112,7 @@
                   <option value="sold">Venduto</option>
                   <option value="archived">Archiviato</option>
                 </select>
+                <small class="field-hint">Per salvare nel DB devi impostare lo stato su <strong>In stock</strong>. Gli altri stati si aggiornano dal Database.</small>
               </label>
               <label>Prezzo acquisto<input id="purchasePrice" type="number" min="0" step="0.01" value="20" /></label>
               <label>Spedizione acquisto<input id="purchaseShipping" type="number" min="0" step="0.01" value="4" /></label>
@@ -161,12 +162,57 @@
             <div><span class="eyebrow">Database</span><h3>Stock e vendite</h3></div>
             <div class="actions-row wrap compact">
               <button class="btn small" id="refreshDb">Aggiorna</button>
-              <button class="btn small ghost" id="exportDbCsv">Export CSV</button>
+              <button class="btn small ghost" id="exportDbCsv">Export CSV filtrato</button>
             </div>
           </div>
+
+          <div class="filters-panel">
+            <div class="form-grid filters-grid">
+              <label>Modalità
+                <select id="filterMode">
+                  <option value="all">Tutte</option>
+                  <option value="vinted">Solo Vinted</option>
+                  <option value="ebay">Solo eBay</option>
+                  <option value="vinted_ebay">Vinted + eBay</option>
+                </select>
+              </label>
+              <label>Categoria
+                <select id="filterCategory">
+                  <option value="all">Tutte</option>
+                  <option>Action figure</option>
+                  <option>LEGO</option>
+                  <option>Carte collezionabili</option>
+                  <option>Videogiochi</option>
+                  <option>Manga e artbook</option>
+                  <option>Altro</option>
+                </select>
+              </label>
+              <label>Stato
+                <select id="filterStatus">
+                  <option value="all">Tutti</option>
+                  <option value="in_stock">In stock</option>
+                  <option value="listed">In vendita</option>
+                  <option value="sold">Venduto</option>
+                  <option value="archived">Archiviato</option>
+                </select>
+              </label>
+              <label>Prezzo vendita min<input id="filterSaleMin" type="number" min="0" step="0.01" placeholder="0" /></label>
+              <label>Prezzo vendita max<input id="filterSaleMax" type="number" min="0" step="0.01" placeholder="9999" /></label>
+              <label>Utile min<input id="filterProfitMin" type="number" step="0.01" placeholder="-999" /></label>
+              <label>Utile max<input id="filterProfitMax" type="number" step="0.01" placeholder="9999" /></label>
+              <label>Costo acquisto min<input id="filterCostMin" type="number" min="0" step="0.01" placeholder="0" /></label>
+              <label>Costo acquisto max<input id="filterCostMax" type="number" min="0" step="0.01" placeholder="9999" /></label>
+            </div>
+            <div class="actions-row wrap compact filters-actions">
+              <button class="btn small primary" id="applyFilters">Applica filtri</button>
+              <button class="btn small ghost" id="resetFilters">Reset filtri</button>
+              <span class="filter-count" id="filterCount">0 prodotti visualizzati</span>
+            </div>
+          </div>
+
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Data</th><th>Prodotto</th><th>Modalità</th><th>Categoria</th><th>Stato</th><th>Costo</th><th>Prezzo</th><th>Utile</th><th>ROI</th><th>Decisione</th><th>Azioni</th></tr></thead>
+              <thead><tr><th>Data</th><th>Prodotto</th><th>Modalità</th><th>Categoria</th><th>Stato</th><th>Costo acquisto</th><th>Prezzo vendita</th><th>Utile</th><th>ROI</th><th>Decisione</th><th>Azioni</th></tr></thead>
               <tbody id="dbRows"></tbody>
             </table>
           </div>
@@ -179,8 +225,30 @@
           <article class="kpi"><span>In stock / listed</span><strong id="kpiStock">0</strong></article>
           <article class="kpi"><span>Utile stimato</span><strong id="kpiProfit">€0,00</strong></article>
           <article class="kpi"><span>ROI medio</span><strong id="kpiRoi">0%</strong></article>
+          <article class="kpi premium-kpi"><span>Ricavi lordi venduti</span><strong id="kpiGrossRevenue">€0,00</strong></article>
+          <article class="kpi premium-kpi"><span>Vendita netta</span><strong id="kpiNetSales">€0,00</strong></article>
+          <article class="kpi premium-kpi"><span>Categoria top margine</span><strong id="kpiTopCategory">—</strong></article>
+          <article class="kpi premium-kpi"><span>Sell-through</span><strong id="kpiSellThrough">0%</strong></article>
         </div>
-        <article class="card"><h3>Scalabilità operativa</h3><p>Per uso reale: mantieni prodotti piccoli, stati aggiornati e export settimanale. La parte premium potrà aggiungere report mensili, alert stock fermo e integrazione pagamenti.</p></article>
+
+        <div class="grid two analytics-grid">
+          <article class="card chart-card">
+            <div class="card-header"><div><span class="eyebrow">Premium analytics</span><h3>Ricavi lordi vs vendita netta</h3></div></div>
+            <canvas id="revenueChart" width="640" height="320" aria-label="Grafico ricavi"></canvas>
+          </article>
+          <article class="card chart-card">
+            <div class="card-header"><div><span class="eyebrow">Premium analytics</span><h3>Margine per categoria</h3></div></div>
+            <canvas id="categoryMarginChart" width="640" height="320" aria-label="Grafico margini categoria"></canvas>
+          </article>
+          <article class="card chart-card">
+            <div class="card-header"><div><span class="eyebrow">Premium analytics</span><h3>Trend utile mensile</h3></div></div>
+            <canvas id="profitTrendChart" width="640" height="320" aria-label="Trend utile"></canvas>
+          </article>
+          <article class="card chart-card">
+            <div class="card-header"><div><span class="eyebrow">Insight</span><h3>Classifica categorie</h3></div></div>
+            <div id="categoryRanking" class="ranking-list"></div>
+          </article>
+        </div>
       </section>
 
       <section id="settingsSection" class="app-section hidden">

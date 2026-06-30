@@ -1,68 +1,50 @@
-# FlipMate V5
+# FlipMate V6 — Auth, stock tracker, filtri e premium analytics
 
-Static web app for reselling margin calculation, stock tracking and sales database.
+FlipMate è una web app statica collegata a Supabase per calcolare margini, salvare stock/vendite e analizzare performance per reselling online.
 
-## V5 structure
+## Novità V6
 
-- `index.html`: public landing page with video, intro and free trial entry.
-- `app.html`: authenticated app page with calculator, database, dashboard and account settings.
-- `app.js`: shared frontend logic.
-- `styles.css`: responsive styling.
-- `supabase-config.js`: public Supabase URL and publishable/anon key.
-- `sql/supabase_schema.sql`: full schema for new projects.
-- `sql/v5_migration_profiles_and_modes.sql`: migration for projects already using V4.
-- `sql/admin_queries.sql`: admin queries for Supabase SQL Editor.
+- Salvataggio prodotto consentito solo con stato `In stock`.
+- Aggiornamento stato direttamente dal Database: `In stock`, `In vendita`, `Venduto`, `Archiviato`.
+- Filtri database per:
+  - modalità analisi;
+  - categoria;
+  - stato;
+  - prezzo vendita min/max;
+  - utile min/max;
+  - costo acquisto min/max.
+- Export CSV filtrato.
+- Dashboard con grafici:
+  - ricavi lordi venduti;
+  - vendita netta stimata;
+  - margine per categoria;
+  - trend utile mensile;
+  - classifica categorie.
+- Supporto modalità operative:
+  - Solo Vinted;
+  - Solo eBay;
+  - Vinted + eBay.
 
-## Key changes in V5
+## Deploy
 
-1. Landing and app are separated.
-2. Trial result is shown only after free registration/login.
-3. Top bar in app shows username instead of “Accedi”.
-4. Account settings include username, email-change request, reset password and payment placeholder.
-5. Operational mode can be selected at signup and changed later:
-   - Solo Vinted
-   - Solo eBay
-   - Vinted + eBay
-6. Database supports stock/sales statuses.
-7. CSV export is hardened against formula injection.
-8. No local fallback for database in production flow.
+1. Carica i file in root del repository GitHub Pages.
+2. Mantieni il file `supabase-config.js` con le tue chiavi pubbliche Supabase.
+3. Non caricare mai la `service_role key`.
+4. Se arrivi da V5, non serve migrazione obbligatoria: la V6 usa colonne già presenti in `products`.
 
-## Deployment
+## Test consigliati
 
-1. Upload files to GitHub repository root.
-2. Enable GitHub Pages from `main` / `/root`.
-3. In Supabase, run SQL:
-   - New project: `sql/supabase_schema.sql`
-   - Existing V4 project: `sql/v5_migration_profiles_and_modes.sql`
-4. Configure `supabase-config.js`:
+1. Login utente A.
+2. Prova a salvare prodotto con stato `Da valutare`: deve dare errore.
+3. Imposta stato `In stock`: deve salvare.
+4. Vai nel Database e cambia stato in `In vendita` o `Venduto`.
+5. Verifica Dashboard e grafici.
+6. Login utente B e verifica che non veda dati utente A.
 
-```js
-window.FLIPMATE_SUPABASE_URL = 'https://your-project.supabase.co';
-window.FLIPMATE_SUPABASE_ANON_KEY = 'your-publishable-or-anon-key';
-```
+## Sicurezza
 
-Never put the Supabase `service_role` or secret key in frontend code.
-
-## Supabase settings
-
-- Auth provider: Email enabled.
-- Site URL: your GitHub Pages URL.
-- Redirect URLs: your GitHub Pages URL and `app.html` path.
-- RLS enabled on `products` and `profiles`.
-
-## Test checklist
-
-1. Open landing page.
-2. Fill the free trial.
-3. Click “Vedi risultato gratis”.
-4. Register in app page.
-5. Verify result appears after login.
-6. Save product.
-7. Verify row in Supabase `products`.
-8. Register second user.
-9. Verify each user sees only their rows.
-10. Export CSV and verify only current user's rows are exported.
-
-## Premium
-
-Premium is not active yet. Payment button is intentionally disabled. For production, integrate Stripe or another payment provider and validate plan server-side / database-side. Do not rely only on frontend code for premium access.
+- Password gestite da Supabase Auth.
+- RLS richiesta su `products` e `profiles`.
+- Ogni utente vede solo le proprie righe.
+- Export CSV protetto contro CSV formula injection.
+- Premium/pagamenti restano da implementare con backend/Stripe per produzione.
