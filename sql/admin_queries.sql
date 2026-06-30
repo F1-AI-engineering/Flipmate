@@ -1,38 +1,66 @@
 -- FlipMate admin queries
--- Run only inside Supabase SQL Editor as project owner.
+-- Run from Supabase SQL Editor as project admin.
 
--- 1) Count registered auth users
-select count(*) as registered_users
-from auth.users;
-
--- 2) Count saved products
-select count(*) as saved_products
-from public.products;
-
--- 3) Product count by user
+-- Users by purpose/profile
 select
-  u.email,
-  count(p.id) as products,
-  sum(p.profit) as estimated_profit,
-  avg(p.roi) as avg_roi,
-  max(p.created_at) as last_save
-from auth.users u
-left join public.products p on p.user_id = u.id
-group by u.email
-order by last_save desc nulls last;
+  p.purpose,
+  p.plan,
+  count(*) as users
+from public.profiles p
+group by p.purpose, p.plan
+order by users desc;
 
--- 4) Latest saved products
+-- Latest registered profiles
 select
   p.created_at,
-  u.email,
-  p.product_name,
-  p.category,
-  p.all_in_cost,
-  p.listing_price,
-  p.profit,
-  p.roi,
-  p.decision
-from public.products p
-join auth.users u on u.id = p.user_id
+  p.username,
+  p.purpose,
+  p.plan,
+  u.email
+from public.profiles p
+left join auth.users u on u.id = p.user_id
 order by p.created_at desc
+limit 50;
+
+-- Products by mode and status
+select
+  coalesce(analysis_mode, source_platform, 'unknown') as mode,
+  status,
+  count(*) as products,
+  round(sum(coalesce(profit,0))::numeric, 2) as estimated_profit
+from public.products
+group by coalesce(analysis_mode, source_platform, 'unknown'), status
+order by products desc;
+
+-- Top users by saved products
+select
+  u.email,
+  p.username,
+  p.purpose,
+  count(pr.id) as products,
+  round(sum(coalesce(pr.profit,0))::numeric, 2) as estimated_profit,
+  round(avg(nullif(pr.roi,0))::numeric, 2) as avg_roi
+from auth.users u
+left join public.profiles p on p.user_id = u.id
+left join public.products pr on pr.user_id = u.id
+group by u.email, p.username, p.purpose
+order by products desc, estimated_profit desc
+limit 50;
+
+-- Latest saved products
+select
+  pr.created_at,
+  u.email,
+  pr.product_name,
+  pr.category,
+  pr.analysis_mode,
+  pr.status,
+  pr.all_in_cost,
+  pr.listing_price,
+  pr.profit,
+  pr.roi,
+  pr.decision
+from public.products pr
+left join auth.users u on u.id = pr.user_id
+order by pr.created_at desc
 limit 100;

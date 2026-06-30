@@ -1,28 +1,33 @@
-# Security — FlipMate
+# Security notes
 
-## Principi
+## Current model
 
-1) Non salvare password nel codice frontend.
-2) Usare Supabase Auth per login e registrazione.
-3) Usare Row Level Security su ogni tabella utente.
-4) Usare solo la `anon public key` nel frontend.
-5) Non pubblicare mai la `service_role key`.
-6) Non raccogliere dati sensibili non necessari.
-7) Non fare scraping automatico non autorizzato.
-8) Validare input lato frontend e proteggere l'accesso lato database con RLS.
+- Hosting: GitHub Pages static files.
+- Auth: Supabase Auth.
+- Database: Supabase Postgres.
+- Access control: Row Level Security on `products` and `profiles`.
+- Frontend key: Supabase publishable/anon key only.
 
-## Produzione
+## Do not do
 
-Per produzione vera valutare:
+- Do not put `service_role` or secret keys in GitHub.
+- Do not disable RLS on user tables.
+- Do not store passwords in app tables or localStorage.
+- Do not implement paid premium only through frontend checks.
 
-1) dominio custom;
-2) hosting con security headers;
-3) cookie banner se inserisci advertising o tracking;
-4) Stripe per pagamenti premium;
-5) logging errori;
-6) backup database;
-7) privacy policy rivista legalmente.
+## V5 hardening
 
-## Segnalazioni
+- Trial result requires login.
+- App page is separated from public landing page.
+- CSV export escapes formula prefixes: `=`, `+`, `-`, `@`.
+- User profile is separated from product data.
+- Payment methods are placeholder only; no card data is collected.
 
-Apri una issue GitHub senza includere dati personali o segreti.
+## Recommended production additions
+
+- Email confirmation enabled.
+- Strong password rules.
+- Leaked password protection if available on the selected Supabase plan.
+- Formal privacy policy with controller/contact details.
+- Cookie banner if adding analytics or advertising cookies.
+- Stripe Customer Portal for payments instead of storing payment data.

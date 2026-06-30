@@ -1,83 +1,68 @@
-# FlipMate V4 — Ad-ready landing + Supabase sandbox
+# FlipMate V5
 
-FlipMate è una web app statica per calcolare margini, ROI e prezzo minimo nel reselling online.
+Static web app for reselling margin calculation, stock tracking and sales database.
 
-## Funzioni
+## V5 structure
 
-- Landing page pronta per traffico/ADV
-- Calcolatore free senza registrazione
-- Registrazione richiesta per database, dashboard ed export CSV
-- Modalità locale fallback tramite localStorage
-- Modalità cloud sandbox tramite Supabase Auth + Postgres + Row Level Security
-- SQL schema incluso
-- Query admin incluse
-- Privacy, Terms e Security incluse
+- `index.html`: public landing page with video, intro and free trial entry.
+- `app.html`: authenticated app page with calculator, database, dashboard and account settings.
+- `app.js`: shared frontend logic.
+- `styles.css`: responsive styling.
+- `supabase-config.js`: public Supabase URL and publishable/anon key.
+- `sql/supabase_schema.sql`: full schema for new projects.
+- `sql/v5_migration_profiles_and_modes.sql`: migration for projects already using V4.
+- `sql/admin_queries.sql`: admin queries for Supabase SQL Editor.
 
-## Struttura file
+## Key changes in V5
 
-```text
-index.html
-styles.css
-app.js
-supabase-config.js
-manifest.webmanifest
-privacy.html
-terms.html
-SECURITY.md
-sql/supabase_schema.sql
-sql/admin_queries.sql
-assets/logo.svg
-assets/demo.mp4
-```
+1. Landing and app are separated.
+2. Trial result is shown only after free registration/login.
+3. Top bar in app shows username instead of “Accedi”.
+4. Account settings include username, email-change request, reset password and payment placeholder.
+5. Operational mode can be selected at signup and changed later:
+   - Solo Vinted
+   - Solo eBay
+   - Vinted + eBay
+6. Database supports stock/sales statuses.
+7. CSV export is hardened against formula injection.
+8. No local fallback for database in production flow.
 
-## Pubblicazione GitHub Pages
+## Deployment
 
-1) Crea o apri il repository GitHub.
-2) Carica tutti i file nella root del repository.
-3) Vai su `Settings > Pages`.
-4) Source: `Deploy from a branch`.
-5) Branch: `main`.
-6) Folder: `/root`.
-7) Salva.
-
-## Setup Supabase sandbox
-
-1) Vai su Supabase e crea un nuovo progetto.
-2) Vai su `SQL Editor`.
-3) Incolla ed esegui `sql/supabase_schema.sql`.
-4) Vai su `Project Settings > API`.
-5) Copia `Project URL`.
-6) Copia `anon public key`.
-7) Apri `supabase-config.js`.
-8) Incolla i due valori:
+1. Upload files to GitHub repository root.
+2. Enable GitHub Pages from `main` / `/root`.
+3. In Supabase, run SQL:
+   - New project: `sql/supabase_schema.sql`
+   - Existing V4 project: `sql/v5_migration_profiles_and_modes.sql`
+4. Configure `supabase-config.js`:
 
 ```js
-window.FLIPMATE_SUPABASE_URL = 'https://xxxx.supabase.co';
-window.FLIPMATE_SUPABASE_ANON_KEY = 'ey...';
+window.FLIPMATE_SUPABASE_URL = 'https://your-project.supabase.co';
+window.FLIPMATE_SUPABASE_ANON_KEY = 'your-publishable-or-anon-key';
 ```
 
-9) Non inserire mai la `service_role key` nel frontend.
-10) Carica il file aggiornato su GitHub.
+Never put the Supabase `service_role` or secret key in frontend code.
 
-## Dove vedere dati utenti
+## Supabase settings
 
-1) Vai su Supabase.
-2) Apri il progetto.
-3) Vai su `Authentication > Users` per vedere utenti registrati.
-4) Vai su `Table Editor > products` per vedere i prodotti salvati.
-5) Vai su `SQL Editor` ed esegui `sql/admin_queries.sql` per statistiche aggregate.
+- Auth provider: Email enabled.
+- Site URL: your GitHub Pages URL.
+- Redirect URLs: your GitHub Pages URL and `app.html` path.
+- RLS enabled on `products` and `profiles`.
 
-## Sicurezza
+## Test checklist
 
-- Password gestite da Supabase Auth.
-- Database protetto da Row Level Security.
-- Ogni utente può leggere/scrivere solo le proprie righe.
-- Il frontend usa solo anon public key.
-- Service role key esclusa dal codice pubblico.
+1. Open landing page.
+2. Fill the free trial.
+3. Click “Vedi risultato gratis”.
+4. Register in app page.
+5. Verify result appears after login.
+6. Save product.
+7. Verify row in Supabase `products`.
+8. Register second user.
+9. Verify each user sees only their rows.
+10. Export CSV and verify only current user's rows are exported.
 
-## Monetizzazione futura
+## Premium
 
-1) SEO pages.
-2) Affiliate link per strumenti da reseller.
-3) AdSense dopo contenuti e traffico.
-4) Premium reale con Stripe + Supabase.
+Premium is not active yet. Payment button is intentionally disabled. For production, integrate Stripe or another payment provider and validate plan server-side / database-side. Do not rely only on frontend code for premium access.

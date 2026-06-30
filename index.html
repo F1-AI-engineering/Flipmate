@@ -3,106 +3,95 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FlipMate — Calcolatore margini per reselling</title>
-  <meta name="description" content="Calcola margini, ROI e prezzo minimo prima di comprare su marketplace e rivendere online. Prova gratuita, database vendite e export CSV dopo registrazione." />
+  <title>FlipMate — Calcolatore e gestione stock per reseller</title>
+  <meta name="description" content="Calcola margini, gestisci stock e traccia vendite per Vinted, eBay o Vinted + eBay. Prova gratuita con registrazione." />
   <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#07111f" />
-  <meta property="og:title" content="FlipMate — Calcolatore margini per reselling" />
-  <meta property="og:description" content="Capisci in 30 secondi se un acquisto da marketplace conviene davvero." />
+  <meta property="og:title" content="FlipMate — Margini, stock e vendite per reseller" />
+  <meta property="og:description" content="Inserisci un prodotto, registrati gratis e ottieni margine, ROI, prezzo minimo e database vendite." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="assets/logo.svg" />
   <link rel="canonical" href="./" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="styles.css" />
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "FlipMate",
-    "applicationCategory": "FinanceApplication",
-    "operatingSystem": "Web",
-    "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"},
-    "description": "Calcolatore margini e database vendite per reselling online."
-  }
-  </script>
 </head>
-<body>
+<body data-page="landing">
   <header class="topbar">
-    <a class="brand-row" href="#top" aria-label="FlipMate home">
+    <a class="brand-row" href="index.html" aria-label="FlipMate home">
       <img src="assets/logo.svg" alt="FlipMate logo" />
       <span>FlipMate</span>
     </a>
     <nav class="topnav" aria-label="Navigazione principale">
-      <a href="#calculator">Calcolatore</a>
       <a href="#features">Funzioni</a>
+      <a href="#usecases">Uso</a>
       <a href="#pricing">Prezzi</a>
       <a href="#faq">FAQ</a>
-      <button class="btn ghost" data-auth-open="login">Accedi</button>
-      <button class="btn primary" data-scroll-target="calculator">Prova gratis</button>
+      <a class="btn ghost" href="app.html?auth=login">Accedi</a>
+      <a class="btn primary" href="#try">Prova gratis</a>
     </nav>
   </header>
 
   <main id="top">
     <section class="hero-section">
       <div class="hero-copy">
-        <span class="eyebrow">Calcolatore gratuito per flipper e reseller</span>
-        <h1>Prima di comprare, verifica se il margine esiste davvero.</h1>
-        <p>Inserisci prezzo d’acquisto, spedizione, fee e prezzo medio venduto. FlipMate calcola utile netto, ROI, prezzo minimo accettabile e decisione operativa.</p>
+        <span class="eyebrow">Calcolatore + stock tracker per reseller</span>
+        <h1>Prima di comprare o vendere, verifica margine, ROI e stock.</h1>
+        <p>FlipMate aiuta chi vende su Vinted, eBay o entrambi a calcolare il margine reale e tenere traccia di prodotti, stock, vendite ed export CSV.</p>
         <div class="hero-ctas">
-          <button class="btn primary big" data-scroll-target="calculator">Prova gratis</button>
-          <button class="btn ghost big" data-auth-open="signup">Registrati per salvare dati</button>
+          <a class="btn primary big" href="#try">Prova gratis</a>
+          <a class="btn ghost big" href="app.html?auth=login">Accedi</a>
         </div>
         <div class="trust-row">
-          <span>✓ Calcolo immediato</span>
-          <span>✓ DB dopo registrazione</span>
-          <span>✓ Export CSV</span>
-          <span>✓ Cloud sandbox opzionale</span>
+          <span>✓ Prova guidata</span>
+          <span>✓ Registrazione gratuita</span>
+          <span>✓ DB cloud</span>
+          <span>✓ Vinted / eBay / entrambi</span>
         </div>
       </div>
       <div class="hero-media" id="demo">
         <div class="video-card">
-          <div class="video-label">Demo rapida</div>
+          <div class="video-label">Video demo</div>
           <video id="demoVideo" autoplay muted loop playsinline controls preload="metadata" poster="assets/logo.svg" aria-label="Video demo FlipMate">
             <source src="assets/demo.mp4" type="video/mp4" />
             Il tuo browser non supporta il video HTML5.
           </video>
         </div>
         <div class="mini-proof">
-          <strong>Output chiave</strong>
+          <strong>Output dopo registrazione</strong>
           <span>Compra / Tratta / Scarta</span>
-          <span>Utile netto</span>
-          <span>ROI stimato</span>
+          <span>Utile netto e ROI</span>
+          <span>Salvataggio stock</span>
         </div>
       </div>
     </section>
 
-    <section class="sponsor-strip" aria-label="Spazio sponsor">
-      <span>Spazio partner</span>
-      <strong>Imballi, bilance, sleeve, stampanti etichette, tool per reseller.</strong>
-      <button class="btn small ghost" data-scroll-target="pricing">Scopri i piani</button>
-    </section>
-
-    <section id="calculator" class="section public-calc-section">
+    <section id="try" class="section public-calc-section">
       <div class="section-heading left">
         <span class="eyebrow">Prova gratuita</span>
-        <h2>Calcolatore free senza registrazione</h2>
-        <p>La prova è libera. Per salvare nel database, accedere alla dashboard o scaricare CSV serve registrazione.</p>
+        <h2>Inserisci i dati. Per vedere il risultato, registrati gratis.</h2>
+        <p>La prova raccoglie solo i dati essenziali. Il risultato completo e il salvataggio nel database sono disponibili nella seconda pagina dopo login.</p>
       </div>
 
       <div class="grid two calc-layout">
         <article class="card">
           <div class="card-header">
             <div>
-              <span class="eyebrow">Input</span>
-              <h3>Simula un flip</h3>
+              <span class="eyebrow">Step 1</span>
+              <h3>Che analisi vuoi fare?</h3>
             </div>
-            <button class="btn small" id="resetCalculator">Reset</button>
           </div>
-          <form id="calculatorForm" class="form-grid">
-            <label>Nome prodotto<input id="productName" type="text" value="Banpresto figure" /></label>
+          <form id="leadCalculatorForm" class="form-grid">
+            <label>Finalità
+              <select id="leadMode">
+                <option value="vinted">Solo Vinted</option>
+                <option value="ebay">Solo eBay</option>
+                <option value="vinted_ebay" selected>Compro su Vinted + vendo su eBay</option>
+              </select>
+            </label>
+            <label>Nome prodotto<input id="leadProductName" type="text" value="Banpresto figure" required /></label>
             <label>Categoria
-              <select id="category">
+              <select id="leadCategory">
                 <option>Action figure</option>
                 <option>LEGO</option>
                 <option>Carte collezionabili</option>
@@ -111,177 +100,96 @@
                 <option>Altro</option>
               </select>
             </label>
-            <label>Prezzo medio venduto eBay<input id="soldAvg" type="number" min="0" step="0.01" value="40" /></label>
-            <label>Prezzo oggetto Vinted<input id="vintedPrice" type="number" min="0" step="0.01" value="20" /></label>
-            <label>Spedizione Vinted<input id="vintedShipping" type="number" min="0" step="0.01" value="4" /></label>
-            <label>Spedizione pagata dal buyer<input id="buyerShipping" type="number" min="0" step="0.01" value="6.5" /></label>
-            <label>Spedizione reale tua<input id="realShipping" type="number" min="0" step="0.01" value="5.2" /></label>
-            <label>Costo imballo<input id="packCost" type="number" min="0" step="0.01" value="0.5" /></label>
-            <label>Commissione eBay %<input id="ebayFeePct" type="number" min="0" step="0.01" value="5" /></label>
-            <label>Tariffa regolatoria %<input id="regPct" type="number" min="0" step="0.01" value="0.43" /></label>
-            <label>Fee fissa eBay €<input id="ebayFixed" type="number" min="0" step="0.01" value="0.35" /></label>
-            <label>Protezione Vinted %<input id="vintedPct" type="number" min="0" step="0.01" value="5" /></label>
-            <label>Protezione Vinted fissa €<input id="vintedFixed" type="number" min="0" step="0.01" value="0.70" /></label>
-            <label class="premium-lock">ROI target <span>Premium</span><input id="targetRoi" value="25%" disabled /></label>
-            <label class="premium-lock">Utile minimo <span>Premium</span><input id="minProfit" value="10 €" disabled /></label>
-            <label class="premium-lock">Giorni liquidazione <span>Premium</span><input id="liquidationDays" value="45" disabled /></label>
+            <label>Prezzo acquisto<input id="leadPurchasePrice" type="number" min="0" step="0.01" value="20" required /></label>
+            <label>Spedizione acquisto<input id="leadPurchaseShipping" type="number" min="0" step="0.01" value="4" /></label>
+            <label>Prezzo vendita stimato<input id="leadSalePrice" type="number" min="0" step="0.01" value="40" required /></label>
+            <label>Costo spedizione tuo<input id="leadRealShipping" type="number" min="0" step="0.01" value="5.2" /></label>
+            <label>Costo imballo<input id="leadPackCost" type="number" min="0" step="0.01" value="0.5" /></label>
           </form>
           <div class="actions-row wrap">
-            <button class="btn primary" id="saveToDb">Salva nel DB</button>
-            <button class="btn" id="copySummary">Copia sintesi</button>
-            <button class="btn ghost" id="exportSingleCsv">Scarica CSV</button>
+            <button class="btn primary" id="startFreeTrial">Vedi risultato gratis</button>
+            <a class="btn ghost" href="app.html?auth=login">Ho già un account</a>
           </div>
         </article>
 
-        <article class="card result-card">
-          <div class="verdict" id="verdictBox">
-            <span>Decisione</span>
-            <strong id="decision">—</strong>
-            <p id="decisionReason">Inserisci i dati per calcolare.</p>
-          </div>
-          <div class="result-grid">
-            <div><span>Costo Vinted all-in</span><strong id="outAllIn">€0,00</strong></div>
-            <div><span>Fair value prudente</span><strong id="outFair">€0,00</strong></div>
-            <div><span>Prezzo annuncio</span><strong id="outListing">€0,00</strong></div>
-            <div><span>Offerta minima</span><strong id="outMinOffer">€0,00</strong></div>
-            <div><span>Break-even</span><strong id="outBreakEven">€0,00</strong></div>
-            <div><span>Max prezzo Vinted</span><strong id="outMaxBuy">€0,00</strong></div>
-            <div><span>Utile netto stimato</span><strong id="outProfit">€0,00</strong></div>
-            <div><span>ROI stimato</span><strong id="outRoi">0%</strong></div>
-          </div>
+        <article class="card locked-result-card">
+          <div class="lock-icon">🔒</div>
+          <h3>Risultato protetto</h3>
+          <p>Per vedere utile netto, ROI, decisione e salvare il prodotto nel database devi creare un account gratuito.</p>
+          <ul class="clean-list">
+            <li>Database personale e separato per utente</li>
+            <li>Export CSV dopo login</li>
+            <li>Modalità Vinted, eBay o Vinted + eBay</li>
+          </ul>
+          <button class="btn primary" id="startFreeTrial2">Registrati e continua</button>
         </article>
       </div>
-    </section>
-
-    <section id="appPanel" class="section app-panel hidden">
-      <div class="section-heading left">
-        <span class="eyebrow">Area registrata</span>
-        <h2>Database vendite e dashboard</h2>
-        <p id="accountStatus">Effettua accesso per visualizzare i tuoi dati salvati.</p>
-      </div>
-      <div class="kpi-grid">
-        <article class="kpi"><span>Pezzi salvati</span><strong id="kpiItems">0</strong></article>
-        <article class="kpi"><span>Utile stimato</span><strong id="kpiProfit">€0,00</strong></article>
-        <article class="kpi"><span>ROI medio</span><strong id="kpiRoi">0%</strong></article>
-        <article class="kpi"><span>Fonte dati</span><strong id="kpiSource">Locale</strong></article>
-      </div>
-      <article class="card">
-        <div class="card-header">
-          <div>
-            <span class="eyebrow">Database</span>
-            <h3>Prodotti salvati</h3>
-          </div>
-          <div class="actions-row wrap compact">
-            <button class="btn small" id="refreshDb">Aggiorna</button>
-            <button class="btn small ghost" id="exportDbCsv">Export CSV</button>
-            <button class="btn small danger" id="clearLocalDb">Svuota DB</button>
-          </div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Data</th><th>Prodotto</th><th>Categoria</th><th>Costo all-in</th><th>Annuncio</th><th>Utile</th><th>ROI</th><th>Decisione</th><th>Azioni</th>
-              </tr>
-            </thead>
-            <tbody id="dbRows"></tbody>
-          </table>
-        </div>
-      </article>
     </section>
 
     <section id="features" class="section">
       <div class="section-heading">
-        <span class="eyebrow">Perché usarlo</span>
-        <h2>Una mini dashboard da reseller</h2>
+        <span class="eyebrow">Funzioni</span>
+        <h2>Da calcolatore a mini gestionale stock</h2>
       </div>
       <div class="feature-grid">
-        <article><strong>Calcolo all-in</strong><p>Include fee, spedizioni, imballi e prezzo minimo accettabile.</p></article>
-        <article><strong>Decisione operativa</strong><p>Trasforma il margine in Compra, Tratta o Scarta.</p></article>
-        <article><strong>Database salvato</strong><p>Dopo registrazione puoi creare storico vendite e scaricare CSV.</p></article>
-        <article><strong>Sandbox cloud</strong><p>Con Supabase puoi avere utenti reali e dati consultabili da dashboard admin.</p></article>
-        <article><strong>Ad-ready</strong><p>Struttura pronta per landing SEO, partner, affiliate e AdSense.</p></article>
-        <article><strong>Premium-ready</strong><p>Parametri avanzati e funzioni future sono già separabili per piano.</p></article>
+        <article><strong>Margine reale</strong><p>Calcola costo all-in, commissioni, spedizione, imballo, utile e ROI.</p></article>
+        <article><strong>Stock tracker</strong><p>Segui prodotti in valutazione, stock, inseriti online, venduti o archiviati.</p></article>
+        <article><strong>Tre modalità</strong><p>Solo Vinted, solo eBay o Vinted + eBay con campi adattivi.</p></article>
+        <article><strong>Database cloud</strong><p>Ogni account vede solo i propri dati; l’admin li consulta da Supabase.</p></article>
+        <article><strong>Export CSV</strong><p>Scarica il database per Excel, reporting e controllo vendite.</p></article>
+        <article><strong>Premium-ready</strong><p>Spazio per piani avanzati, pagamenti, alert e dashboard evolute.</p></article>
+      </div>
+    </section>
+
+    <section id="usecases" class="section">
+      <div class="section-heading">
+        <span class="eyebrow">Casi d’uso</span>
+        <h2>Scegli come usi FlipMate</h2>
+      </div>
+      <div class="pricing-grid">
+        <article class="price-card"><h3>Solo Vinted</h3><p>Gestione stock e vendite per chi compra/vende direttamente su Vinted.</p></article>
+        <article class="price-card"><h3>Solo eBay</h3><p>Calcolo margine includendo commissioni, spedizioni e prezzo minimo eBay.</p></article>
+        <article class="price-card highlighted"><h3>Vinted + eBay</h3><p>Modello per chi compra su Vinted e rivende su eBay con margine target.</p></article>
       </div>
     </section>
 
     <section id="pricing" class="section pricing-section">
       <div class="section-heading">
         <span class="eyebrow">Piani</span>
-        <h2>Parti free, monetizza dopo validazione</h2>
+        <h2>Gratis per partire, premium per scalare</h2>
       </div>
       <div class="pricing-grid">
         <article class="price-card">
           <h3>Free</h3>
           <p class="price">€0</p>
-          <ul>
-            <li>Calcolatore pubblico</li>
-            <li>Fee e spedizioni modificabili</li>
-            <li>Registrazione gratuita</li>
-            <li>Database vendite</li>
-            <li>Export CSV</li>
-          </ul>
-          <button class="btn primary" data-scroll-target="calculator">Prova gratis</button>
+          <ul><li>Calcolatore</li><li>Registrazione</li><li>Database prodotti</li><li>Export CSV</li></ul>
+          <a class="btn primary" href="#try">Prova gratis</a>
         </article>
         <article class="price-card highlighted">
           <h3>Premium</h3>
           <p class="price">Coming soon</p>
-          <ul>
-            <li>ROI e utile target personalizzati</li>
-            <li>Strategie per categoria</li>
-            <li>Dashboard avanzata</li>
-            <li>Backup cloud multi-device</li>
-            <li>Alert liquidazione stock</li>
-          </ul>
-          <button class="btn" data-auth-open="signup">Registrati gratis</button>
+          <ul><li>Parametri avanzati</li><li>Dashboard evoluta</li><li>Pagamenti</li><li>Alert stock</li></ul>
+          <a class="btn" href="app.html?auth=signup">Registrati gratis</a>
         </article>
       </div>
     </section>
 
     <section id="faq" class="section faq-section">
-      <div class="section-heading left">
-        <span class="eyebrow">FAQ</span>
-        <h2>Domande rapide</h2>
-      </div>
+      <div class="section-heading left"><span class="eyebrow">FAQ</span><h2>Domande rapide</h2></div>
       <div class="faq-list">
-        <details open><summary>Il calcolatore è gratuito?</summary><p>Sì, la simulazione base è gratuita e non richiede registrazione.</p></details>
-        <details><summary>Quando serve registrarsi?</summary><p>Per salvare prodotti, visualizzare il database, dashboard ed esportare CSV.</p></details>
-        <details><summary>Gli utenti vedono i dati degli altri?</summary><p>No. Con Supabase e Row Level Security ogni utente accede solo ai propri dati.</p></details>
-        <details><summary>FlipMate è affiliato a marketplace?</summary><p>No. FlipMate è uno strumento indipendente di calcolo margini.</p></details>
+        <details open><summary>Il risultato della prova è pubblico?</summary><p>No. Per vedere il risultato completo devi registrarti gratis e passare alla pagina app.</p></details>
+        <details><summary>Posso usarlo solo per Vinted?</summary><p>Sì. Imposti la finalità Solo Vinted e l’app nasconde i campi eBay.</p></details>
+        <details><summary>FlipMate è affiliato a marketplace?</summary><p>No. È uno strumento indipendente di calcolo e gestione stock.</p></details>
       </div>
     </section>
   </main>
 
   <footer class="footer">
     <div class="brand-row"><img src="assets/logo.svg" alt="FlipMate logo" /><span>FlipMate</span></div>
-    <nav>
-      <a href="privacy.html">Privacy</a>
-      <a href="terms.html">Termini</a>
-      <a href="SECURITY.md">Security</a>
-    </nav>
+    <nav><a href="privacy.html">Privacy</a><a href="terms.html">Termini</a><a href="SECURITY.md">Security</a></nav>
   </footer>
 
-  <div id="authModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="authTitle">
-    <div class="modal-card">
-      <button class="modal-close" id="closeAuth" aria-label="Chiudi">×</button>
-      <span class="eyebrow">Account gratuito</span>
-      <h2 id="authTitle">Accedi o registrati</h2>
-      <p id="authHint">Accedi per salvare prodotti, visualizzare dashboard, gestire il database e scaricare CSV.</p>
-      <form id="authForm" class="form-grid single">
-        <label>Email<input id="authEmail" type="email" placeholder="nome@email.com" required /></label>
-        <label>Password<input id="authPassword" type="password" minlength="8" placeholder="Minimo 8 caratteri" required /></label>
-        <button class="btn primary" id="signupBtn" type="button">Registrati</button>
-        <button class="btn" id="loginBtn" type="button">Accedi</button>
-        <button class="btn ghost hidden" id="logoutBtn" type="button">Esci</button>
-      </form>
-      <p class="fineprint">Non inserire dati sensibili. Per produzione usa Supabase Auth, RLS e HTTPS.</p>
-    </div>
-  </div>
-
   <div id="toast" class="toast hidden"></div>
-
-  <script src="supabase-config.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="app.js"></script>
 </body>
 </html>

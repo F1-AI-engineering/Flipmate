@@ -1,408 +1,408 @@
 (() => {
-  const DEFAULTS = {
-    targetRoi: 25,
-    minProfit: 10,
-    soldDiscount: 10,
-    listingMarkup: 8,
-    minOfferDiscount: 5
-  };
-
-  const state = {
-    user: null,
-    mode: 'local',
-    db: [],
-    lastCalc: null,
-    supabase: null,
-    pendingSave: false
-  };
-
   const $ = (id) => document.getElementById(id);
-  const money = (n) => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(Number.isFinite(n) ? n : 0);
-  const pct = (n) => `${(Number.isFinite(n) ? n : 0).toFixed(1).replace('.', ',')}%`;
+  const page = document.body?.dataset?.page || 'landing';
+  const fmt = (n) => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(Number.isFinite(+n) ? +n : 0);
+  const pct = (n) => `${(Number.isFinite(+n) ? +n : 0).toFixed(1).replace('.', ',')}%`;
   const num = (id) => parseFloat($(id)?.value || '0') || 0;
-  const safe = (s) => String(s || '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  const val = (id) => $(id)?.value || '';
+  const toast = (msg) => { const t = $('toast'); if (!t) return alert(msg); t.textContent = msg; t.classList.remove('hidden'); clearTimeout(window.__toastTimer); window.__toastTimer = setTimeout(() => t.classList.add('hidden'), 3800); };
 
-  function toast(message) {
-    const el = $('toast');
-    el.textContent = message;
-    el.classList.remove('hidden');
-    clearTimeout(el._t);
-    el._t = setTimeout(() => el.classList.add('hidden'), 3400);
+  function csvSafe(value) {
+    const s = String(value ?? '').replace(/\r?\n/g, ' ').trim();
+    const hardened = /^[=+\-@]/.test(s) ? `'${s}` : s;
+    return `"${hardened.replace(/"/g, '""')}"`;
   }
 
-  function readInputs() {
-    return {
-      product_name: $('productName').value.trim() || 'Prodotto senza nome',
-      category: $('category').value,
-      sold_avg: num('soldAvg'),
-      vinted_price: num('vintedPrice'),
-      vinted_shipping: num('vintedShipping'),
-      buyer_shipping: num('buyerShipping'),
-      real_shipping: num('realShipping'),
-      packaging_cost: num('packCost'),
-      ebay_fee_pct: num('ebayFeePct'),
-      regulatory_fee_pct: num('regPct'),
-      ebay_fixed_fee: num('ebayFixed'),
-      vinted_fee_pct: num('vintedPct'),
-      vinted_fixed_fee: num('vintedFixed')
-    };
-  }
-
-  function calculate() {
-    const i = readInputs();
-    const vintedProtection = i.vinted_price * (i.vinted_fee_pct / 100) + i.vinted_fixed_fee;
-    const allIn = i.vinted_price + i.vinted_shipping + vintedProtection;
-    const fair = i.sold_avg * (1 - DEFAULTS.soldDiscount / 100);
-    const listing = fair * (1 + DEFAULTS.listingMarkup / 100);
-    const minOffer = fair * (1 - DEFAULTS.minOfferDiscount / 100);
-    const grossReceived = minOffer + i.buyer_shipping;
-    const ebayFees = grossReceived * ((i.ebay_fee_pct + i.regulatory_fee_pct) / 100) + i.ebay_fixed_fee;
-    const profit = grossReceived - ebayFees - allIn - i.real_shipping - i.packaging_cost;
-    const roi = allIn > 0 ? (profit / allIn) * 100 : 0;
-    const breakEven = allIn + i.real_shipping + i.packaging_cost + i.ebay_fixed_fee;
-    const maxBuy = Math.max(0, (grossReceived - ebayFees - i.real_shipping - i.packaging_cost - DEFAULTS.minProfit - i.vinted_shipping - i.vinted_fixed_fee) / (1 + i.vinted_fee_pct / 100));
-
-    let decision = 'SCARTA';
-    let cls = 'reject';
-    let reason = `Margine insufficiente: utile ${money(profit)} e ROI ${pct(roi)}.`;
-    if (profit >= DEFAULTS.minProfit && roi >= DEFAULTS.targetRoi) {
-      decision = 'COMPRA'; cls = 'buy'; reason = `Numeri buoni: utile sopra ${money(DEFAULTS.minProfit)} e ROI sopra ${DEFAULTS.targetRoi}%.`;
-    } else if (profit > 0 && roi >= 10) {
-      decision = 'TRATTA'; cls = 'negotiate'; reason = `Margine presente ma sotto target. Prova a pagare massimo ${money(maxBuy)}.`;
-    }
-
-    const result = {
-      ...i,
-      all_in_cost: allIn,
-      fair_value: fair,
-      listing_price: listing,
-      min_offer: minOffer,
-      break_even: breakEven,
-      max_buy_price: maxBuy,
-      profit,
-      roi,
-      decision,
-      created_at: new Date().toISOString()
-    };
-    state.lastCalc = result;
-    renderResult(result, cls, reason);
-    return result;
-  }
-
-  function renderResult(r, cls, reason) {
-    $('decision').textContent = r.decision;
-    $('decisionReason').textContent = reason;
-    const box = $('verdictBox');
-    box.className = `verdict ${cls}`;
-    $('outAllIn').textContent = money(r.all_in_cost);
-    $('outFair').textContent = money(r.fair_value);
-    $('outListing').textContent = money(r.listing_price);
-    $('outMinOffer').textContent = money(r.min_offer);
-    $('outBreakEven').textContent = money(r.break_even);
-    $('outMaxBuy').textContent = money(r.max_buy_price);
-    $('outProfit').textContent = money(r.profit);
-    $('outRoi').textContent = pct(r.roi);
-  }
-
-  function isSupabaseReady() {
-    return Boolean(window.FLIPMATE_SUPABASE_URL && window.FLIPMATE_SUPABASE_ANON_KEY && window.FLIPMATE_SUPABASE_URL.includes('supabase.co') && window.supabase);
-  }
-
-  async function initSupabase() {
-    if (!isSupabaseReady()) {
-      state.mode = 'local';
-      $('kpiSource').textContent = 'Privato';
-      return;
-    }
-    state.supabase = window.supabase.createClient(window.FLIPMATE_SUPABASE_URL, window.FLIPMATE_SUPABASE_ANON_KEY);
-    state.mode = 'cloud';
-    $('kpiSource').textContent = 'Cloud';
-    const { data } = await state.supabase.auth.getSession();
-    if (data?.session?.user) setUser(data.session.user);
-    state.supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-    });
-  }
-
-  function setUser(user) {
-    state.user = user;
-    if (user) {
-      $('appPanel').classList.remove('hidden');
-      $('accountStatus').textContent = `Accesso eseguito: ${user.email || 'utente locale'}.`;
-      $('logoutBtn').classList.remove('hidden');
-      closeAuth();
-      loadDb();
-      if (state.pendingSave) {
-        state.pendingSave = false;
-        saveCurrentCalc();
-      }
-    } else {
-      $('accountStatus').textContent = 'Effettua accesso per visualizzare i tuoi dati salvati.';
-      $('logoutBtn').classList.add('hidden');
-    }
-  }
-
-  function localUsers() {
-    return JSON.parse(localStorage.getItem('flipmate_users_v4') || '{}');
-  }
-  function saveLocalUsers(users) {
-    localStorage.setItem('flipmate_users_v4', JSON.stringify(users));
-  }
-  function localKey() {
-    return `flipmate_db_v4_${state.user?.id || state.user?.email || 'guest'}`;
-  }
-
-  async function signup() {
-    const email = $('authEmail').value.trim().toLowerCase();
-    const password = $('authPassword').value;
-    if (!email || password.length < 8) return toast('Inserisci email e password di almeno 8 caratteri.');
-    if (state.mode === 'cloud') {
-      const { data, error } = await state.supabase.auth.signUp({ email, password });
-      if (error) return toast(error.message);
-      if (data.user) setUser(data.user);
-      toast('Registrazione inviata. Se Supabase richiede conferma email, controlla la casella.');
-    } else {
-      const users = localUsers();
-      users[email] = { email, created_at: new Date().toISOString() };
-      saveLocalUsers(users);
-      setUser({ id: email, email });
-      toast('Registrazione completata.');
-    }
-  }
-
-  async function login() {
-    const email = $('authEmail').value.trim().toLowerCase();
-    const password = $('authPassword').value;
-    if (!email || password.length < 8) return toast('Inserisci email e password di almeno 8 caratteri.');
-    if (state.mode === 'cloud') {
-      const { data, error } = await state.supabase.auth.signInWithPassword({ email, password });
-      if (error) return toast(error.message);
-      setUser(data.user);
-      toast('Accesso effettuato.');
-    } else {
-      const users = localUsers();
-      if (!users[email]) users[email] = { email, created_at: new Date().toISOString() };
-      saveLocalUsers(users);
-      setUser({ id: email, email });
-      toast('Accesso effettuato.');
-    }
-  }
-
-  async function logout() {
-    if (state.mode === 'cloud') await state.supabase.auth.signOut();
-    setUser(null);
-    state.db = [];
-    renderDb();
-    toast('Logout effettuato.');
-  }
-
-  function requireAuth(action) {
-    if (state.user) return true;
-    state.pendingSave = action === 'save';
-    openAuth('signup');
-    toast('Registrati gratis per usare database, dashboard ed export.');
-    return false;
-  }
-
-  async function saveCurrentCalc() {
-    const calc = state.lastCalc || calculate();
-    if (!requireAuth('save')) return;
-    const row = {
-      product_name: calc.product_name,
-      category: calc.category,
-      source_platform: 'Vinted',
-      purchase_price: calc.vinted_price,
-      purchase_shipping: calc.vinted_shipping,
-      buyer_shipping: calc.buyer_shipping,
-      real_shipping: calc.real_shipping,
-      packaging_cost: calc.packaging_cost,
-      sold_avg_price: calc.sold_avg,
-      all_in_cost: calc.all_in_cost,
-      fair_value: calc.fair_value,
-      listing_price: calc.listing_price,
-      min_offer: calc.min_offer,
-      break_even: calc.break_even,
-      max_buy_price: calc.max_buy_price,
-      profit: calc.profit,
-      roi: calc.roi,
-      decision: calc.decision,
-      status: 'watchlist',
-      notes: ''
-    };
-
-    if (state.mode === 'cloud') {
-      const { error } = await state.supabase.from('products').insert(row);
-      if (error) return toast(error.message);
-      toast('Prodotto salvato nel cloud.');
-    } else {
-      const rows = JSON.parse(localStorage.getItem(localKey()) || '[]');
-      rows.unshift({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...row });
-      localStorage.setItem(localKey(), JSON.stringify(rows));
-      toast('Prodotto salvato nel DB.');
-    }
-    $('appPanel').classList.remove('hidden');
-    await loadDb();
-    document.getElementById('appPanel').scrollIntoView({ behavior: 'smooth' });
-  }
-
-  async function loadDb() {
-    if (!state.user) return;
-    if (state.mode === 'cloud') {
-      const { data, error } = await state.supabase.from('products').select('*').order('created_at', { ascending: false });
-      if (error) return toast(error.message);
-      state.db = data || [];
-    } else {
-      state.db = JSON.parse(localStorage.getItem(localKey()) || '[]');
-    }
-    renderDb();
-  }
-
-  async function deleteRow(id) {
-    if (!state.user) return;
-    if (state.mode === 'cloud') {
-      const { error } = await state.supabase.from('products').delete().eq('id', id);
-      if (error) return toast(error.message);
-    } else {
-      const rows = state.db.filter(r => r.id !== id);
-      localStorage.setItem(localKey(), JSON.stringify(rows));
-    }
-    await loadDb();
-  }
-
-  function renderDb() {
-    const tbody = $('dbRows');
-    if (!state.user) {
-      tbody.innerHTML = '<tr><td colspan="9">Registrati o accedi per vedere il database.</td></tr>';
-      updateKpis([]);
-      return;
-    }
-    if (!state.db.length) {
-      tbody.innerHTML = '<tr><td colspan="9">Nessun prodotto salvato.</td></tr>';
-      updateKpis([]);
-      return;
-    }
-    tbody.innerHTML = state.db.map(row => `
-      <tr>
-        <td>${new Date(row.created_at).toLocaleDateString('it-IT')}</td>
-        <td>${safe(row.product_name)}</td>
-        <td>${safe(row.category)}</td>
-        <td>${money(row.all_in_cost)}</td>
-        <td>${money(row.listing_price)}</td>
-        <td class="${row.profit >= 0 ? 'positive' : 'negative'}">${money(row.profit)}</td>
-        <td>${pct(row.roi)}</td>
-        <td>${safe(row.decision)}</td>
-        <td><button class="btn small danger" data-delete-id="${row.id}">Elimina</button></td>
-      </tr>
-    `).join('');
-    updateKpis(state.db);
-  }
-
-  function updateKpis(rows) {
-    const totalProfit = rows.reduce((s, r) => s + Number(r.profit || 0), 0);
-    const avgRoi = rows.length ? rows.reduce((s, r) => s + Number(r.roi || 0), 0) / rows.length : 0;
-    $('kpiItems').textContent = rows.length;
-    $('kpiProfit').textContent = money(totalProfit);
-    $('kpiRoi').textContent = pct(avgRoi);
-    $('kpiSource').textContent = state.mode === 'cloud' ? 'Cloud' : 'Privato';
-  }
-
-  function toCsv(rows) {
-    const headers = ['created_at','product_name','category','source_platform','purchase_price','purchase_shipping','all_in_cost','sold_avg_price','listing_price','min_offer','profit','roi','decision','status'];
-    const clean = (v) => `"${String(v ?? '').replaceAll('"','""')}"`;
-    return [headers.join(';'), ...rows.map(r => headers.map(h => clean(r[h])).join(';'))].join('\n');
-  }
-
-  function downloadFile(name, content, type = 'text/csv;charset=utf-8') {
-    const blob = new Blob([content], { type });
+  function downloadCsv(filename, rows) {
+    const csv = rows.map(r => r.map(csvSafe).join(';')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = name;
-    a.click();
+    a.href = url; a.download = filename; a.click();
     URL.revokeObjectURL(url);
   }
 
-  function exportSingle() {
-    const calc = state.lastCalc || calculate();
-    if (!requireAuth('export')) return;
-    downloadFile('flipmate-calcolo.csv', toCsv([{ ...calc, sold_avg_price: calc.sold_avg, purchase_price: calc.vinted_price, purchase_shipping: calc.vinted_shipping, source_platform: 'Vinted', status: 'simulation' }]));
+  function modeLabel(mode) {
+    return ({ vinted: 'Solo Vinted', ebay: 'Solo eBay', vinted_ebay: 'Vinted + eBay' })[mode] || 'Vinted + eBay';
   }
 
-  function exportDb() {
-    if (!requireAuth('export')) return;
-    downloadFile('flipmate-database.csv', toCsv(state.db));
+  function statusLabel(status) {
+    return ({ watchlist:'Da valutare', in_stock:'In stock', listed:'In vendita', sold:'Venduto', archived:'Archiviato' })[status] || status || 'Da valutare';
   }
 
-  function copySummary() {
-    const r = state.lastCalc || calculate();
-    const text = `FlipMate: ${r.product_name}\nDecisione: ${r.decision}\nCosto all-in: ${money(r.all_in_cost)}\nPrezzo annuncio: ${money(r.listing_price)}\nOfferta minima: ${money(r.min_offer)}\nUtile netto: ${money(r.profit)}\nROI: ${pct(r.roi)}\nMax prezzo Vinted: ${money(r.max_buy_price)}`;
-    navigator.clipboard?.writeText(text);
-    toast('Sintesi copiata.');
+  function calculate(input) {
+    const mode = input.mode || 'vinted_ebay';
+    const purchasePrice = +input.purchasePrice || 0;
+    const purchaseShipping = +input.purchaseShipping || 0;
+    const salePrice = +input.salePrice || 0;
+    const buyerShipping = +input.buyerShipping || 0;
+    const realShipping = +input.realShipping || 0;
+    const packCost = +input.packCost || 0;
+    const ebayFeePct = +input.ebayFeePct || 0;
+    const regPct = +input.regPct || 0;
+    const ebayFixed = +input.ebayFixed || 0;
+    const vintedPct = +input.vintedPct || 0;
+    const vintedFixed = +input.vintedFixed || 0;
+    const targetRoi = 25;
+    const minProfit = 10;
+
+    const vintedBuyingFee = mode === 'vinted_ebay' ? purchasePrice * vintedPct / 100 + vintedFixed : 0;
+    const allIn = purchasePrice + purchaseShipping + vintedBuyingFee + packCost;
+
+    const grossReceived = salePrice + (mode === 'ebay' || mode === 'vinted_ebay' ? buyerShipping : 0);
+    const ebayFees = (mode === 'ebay' || mode === 'vinted_ebay') ? grossReceived * (ebayFeePct + regPct) / 100 + ebayFixed : 0;
+    const shippingCost = realShipping;
+    const profit = salePrice + ((mode === 'ebay' || mode === 'vinted_ebay') ? buyerShipping : 0) - ebayFees - purchasePrice - purchaseShipping - vintedBuyingFee - shippingCost - packCost;
+    const roi = allIn > 0 ? (profit / allIn) * 100 : 0;
+
+    const fair = salePrice * 0.9;
+    const listing = mode === 'vinted' ? salePrice : salePrice * 1.08;
+    const minOffer = mode === 'vinted' ? salePrice * 0.93 : salePrice * 0.95;
+    const breakEven = salePrice - profit;
+    const maxBuy = Math.max(0, purchasePrice + profit - Math.max(minProfit, allIn * targetRoi / 100));
+
+    let decision = 'SCARTA';
+    let reason = 'Margine sotto soglia.';
+    if (profit >= minProfit && roi >= targetRoi) { decision = 'COMPRA'; reason = 'Utile e ROI sopra target.'; }
+    else if (profit > 0 && roi > 10) { decision = 'TRATTA'; reason = 'Margine positivo ma serve prezzo migliore.'; }
+    return { allIn, fair, listing, minOffer, breakEven, maxBuy, profit, roi, decision, reason, mode, salePrice };
   }
 
-  function resetCalculator() {
-    $('productName').value = 'Banpresto figure';
-    $('category').value = 'Action figure';
-    $('soldAvg').value = 40;
-    $('vintedPrice').value = 20;
-    $('vintedShipping').value = 4;
-    $('buyerShipping').value = 6.5;
-    $('realShipping').value = 5.2;
-    $('packCost').value = 0.5;
-    $('ebayFeePct').value = 5;
-    $('regPct').value = 0.43;
-    $('ebayFixed').value = 0.35;
-    $('vintedPct').value = 5;
-    $('vintedFixed').value = 0.70;
-    calculate();
+  function landingInit() {
+    const start = () => {
+      const payload = {
+        mode: val('leadMode'),
+        productName: val('leadProductName'),
+        category: val('leadCategory'),
+        purchasePrice: num('leadPurchasePrice'),
+        purchaseShipping: num('leadPurchaseShipping'),
+        salePrice: num('leadSalePrice'),
+        realShipping: num('leadRealShipping'),
+        packCost: num('leadPackCost'),
+        buyerShipping: val('leadMode') === 'vinted' ? 0 : 6.5,
+        ebayFeePct: val('leadMode') === 'vinted' ? 0 : 5,
+        regPct: val('leadMode') === 'vinted' ? 0 : 0.43,
+        ebayFixed: val('leadMode') === 'vinted' ? 0 : 0.35,
+        vintedPct: val('leadMode') === 'vinted_ebay' ? 5 : 0,
+        vintedFixed: val('leadMode') === 'vinted_ebay' ? 0.70 : 0
+      };
+      sessionStorage.setItem('flipmate_pending_calc', JSON.stringify(payload));
+      location.href = 'app.html?auth=signup&pending=1';
+    };
+    $('startFreeTrial')?.addEventListener('click', start);
+    $('startFreeTrial2')?.addEventListener('click', start);
   }
 
-  function openAuth(mode = 'signup') {
-    $('authModal').classList.remove('hidden');
-    $('authTitle').textContent = mode === 'login' ? 'Accedi' : 'Registrati gratis';
-  }
-  function closeAuth() { $('authModal').classList.add('hidden'); }
+  let supabase = null;
+  let session = null;
+  let profile = null;
+  let dbCache = [];
 
-  function bindEvents() {
-    document.querySelectorAll('[data-scroll-target]').forEach(btn => {
-      btn.addEventListener('click', () => document.getElementById(btn.dataset.scrollTarget)?.scrollIntoView({ behavior: 'smooth' }));
+  function ensureSupabase() {
+    const url = window.FLIPMATE_SUPABASE_URL;
+    const key = window.FLIPMATE_SUPABASE_ANON_KEY;
+    if (!url || !key || !window.supabase) return null;
+    return window.supabase.createClient(url, key);
+  }
+
+  async function appInit() {
+    supabase = ensureSupabase();
+    if (!supabase) {
+      $('authGate')?.classList.remove('hidden');
+      toast('Supabase non configurato: account e database non disponibili.');
+      return;
+    }
+
+    bindAppEvents();
+    const { data } = await supabase.auth.getSession();
+    session = data.session;
+    if (!session) showAuthGate(); else await showApp();
+
+    supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      session = newSession;
+      if (session) await showApp(); else showAuthGate();
     });
-    document.querySelectorAll('[data-auth-open]').forEach(btn => btn.addEventListener('click', () => openAuth(btn.dataset.authOpen)));
-    document.querySelectorAll('#calculatorForm input,#calculatorForm select').forEach(el => el.addEventListener('input', calculate));
-    $('resetCalculator').addEventListener('click', resetCalculator);
-    $('saveToDb').addEventListener('click', saveCurrentCalc);
-    $('copySummary').addEventListener('click', copySummary);
-    $('exportSingleCsv').addEventListener('click', exportSingle);
-    $('exportDbCsv').addEventListener('click', exportDb);
-    $('refreshDb').addEventListener('click', loadDb);
-    $('clearLocalDb').addEventListener('click', () => {
-      if (state.mode === 'cloud') return toast('In cloud elimina le singole righe dalla tabella.');
-      if (!state.user) return;
-      localStorage.removeItem(localKey());
-      loadDb();
-    });
-    $('signupBtn').addEventListener('click', signup);
-    $('loginBtn').addEventListener('click', login);
-    $('logoutBtn').addEventListener('click', logout);
-    $('closeAuth').addEventListener('click', closeAuth);
-    $('authModal').addEventListener('click', (e) => { if (e.target.id === 'authModal') closeAuth(); });
-    $('dbRows').addEventListener('click', e => {
-      const id = e.target?.dataset?.deleteId;
-      if (id) deleteRow(id);
-    });
   }
 
-  async function init() {
-    bindEvents();
-    calculate();
-    await initSupabase();
-    renderDb();
-    const video = $('demoVideo');
-    if (video) {
-      video.muted = true;
-      video.play?.().catch(() => {});
+  function showAuthGate() {
+    $('authGate')?.classList.remove('hidden');
+    $('appShell')?.classList.add('hidden');
+    $('accountButton')?.classList.add('hidden');
+    const pending = getPendingCalc();
+    if (pending) {
+      $('pendingTitle').textContent = `Calcolo in attesa: ${pending.productName || 'Prodotto'}`;
+      $('pendingText').textContent = `Modalità: ${modeLabel(pending.mode)}. Registrati o accedi per vedere il risultato completo.`;
+      $('authPurpose').value = pending.mode || 'vinted_ebay';
     }
   }
 
-  init();
+  async function showApp() {
+    $('authGate')?.classList.add('hidden');
+    $('appShell')?.classList.remove('hidden');
+    $('accountButton')?.classList.remove('hidden');
+    await loadProfile();
+    await applyProfileToUi();
+    applyPendingCalc();
+    renderCalculation();
+    await loadDb();
+  }
+
+  function getPendingCalc() {
+    try { return JSON.parse(sessionStorage.getItem('flipmate_pending_calc') || 'null'); } catch { return null; }
+  }
+
+  function fillFormFromPayload(p) {
+    if (!p) return;
+    const map = {
+      analysisMode:p.mode, productName:p.productName, category:p.category, purchasePrice:p.purchasePrice,
+      purchaseShipping:p.purchaseShipping, salePrice:p.salePrice, realShipping:p.realShipping, packCost:p.packCost,
+      buyerShipping:p.buyerShipping, ebayFeePct:p.ebayFeePct, regPct:p.regPct, ebayFixed:p.ebayFixed,
+      vintedPct:p.vintedPct, vintedFixed:p.vintedFixed
+    };
+    Object.entries(map).forEach(([id,v]) => { if ($(id) && v !== undefined && v !== null) $(id).value = v; });
+  }
+
+  function applyPendingCalc() {
+    const pending = getPendingCalc();
+    if (!pending) return;
+    fillFormFromPayload(pending);
+    sessionStorage.removeItem('flipmate_pending_calc');
+    showSection('calculator');
+    toast('Risultato della prova caricato. Ora puoi salvarlo nel database.');
+  }
+
+  async function loadProfile() {
+    const user = session?.user;
+    if (!user) return;
+    const { data, error } = await supabase.from('profiles').select('*').eq('user_id', user.id).single();
+    if (error || !data) {
+      const fallbackUsername = user.email?.split('@')[0] || 'utente';
+      const purpose = val('authPurpose') || 'vinted_ebay';
+      const insert = { user_id: user.id, username: fallbackUsername, purpose, plan: 'free' };
+      const res = await supabase.from('profiles').insert(insert).select('*').single();
+      profile = res.data || insert;
+    } else profile = data;
+  }
+
+  async function applyProfileToUi() {
+    const user = session?.user;
+    const name = profile?.username || user?.email?.split('@')[0] || 'Account';
+    $('accountButton').textContent = name;
+    $('welcomeTitle').textContent = `Ciao, ${name}`;
+    $('accountStatus').textContent = `Accesso eseguito come ${user?.email || ''}. Piano: ${profile?.plan || 'free'}.`;
+    $('profilePurpose').value = profile?.purpose || 'vinted_ebay';
+    $('analysisMode').value = profile?.purpose || 'vinted_ebay';
+    $('profileUsername').value = name;
+    $('profileEmail').value = user?.email || '';
+    $('planStatus').textContent = `Piano attuale: ${(profile?.plan || 'free').toUpperCase()}`;
+    applyModeFields();
+  }
+
+  function currentInput() {
+    return {
+      mode: val('analysisMode'), productName: val('productName'), category: val('category'), status: val('status'),
+      purchasePrice: num('purchasePrice'), purchaseShipping: num('purchaseShipping'), vintedPct: num('vintedPct'), vintedFixed: num('vintedFixed'),
+      salePrice: num('salePrice'), buyerShipping: num('buyerShipping'), realShipping: num('realShipping'), packCost: num('packCost'),
+      ebayFeePct: num('ebayFeePct'), regPct: num('regPct'), ebayFixed: num('ebayFixed'), notes: val('notes')
+    };
+  }
+
+  function renderCalculation() {
+    if (!$('decision')) return null;
+    const input = currentInput();
+    const out = calculate(input);
+    $('decision').textContent = out.decision;
+    $('decisionReason').textContent = out.reason;
+    $('outAllIn').textContent = fmt(out.allIn);
+    $('outFair').textContent = fmt(out.fair);
+    $('outListing').textContent = fmt(out.listing);
+    $('outMinOffer').textContent = fmt(out.minOffer);
+    $('outBreakEven').textContent = fmt(out.breakEven);
+    $('outMaxBuy').textContent = fmt(out.maxBuy);
+    $('outProfit').textContent = fmt(out.profit);
+    $('outRoi').textContent = pct(out.roi);
+    return { input, out };
+  }
+
+  function applyModeFields() {
+    const mode = val('analysisMode') || 'vinted_ebay';
+    document.querySelectorAll('[data-mode-field="ebaySell"]').forEach(el => el.classList.toggle('hidden', mode === 'vinted'));
+    document.querySelectorAll('[data-mode-field="vintedBuy"]').forEach(el => el.classList.toggle('hidden', mode !== 'vinted_ebay'));
+    if (mode === 'vinted') {
+      ['buyerShipping','ebayFeePct','regPct','ebayFixed','vintedPct','vintedFixed'].forEach(id => { if ($(id)) $(id).value = 0; });
+    }
+    if (mode === 'ebay') {
+      ['vintedPct','vintedFixed'].forEach(id => { if ($(id)) $(id).value = 0; });
+    }
+    renderCalculation();
+  }
+
+  async function signUp() {
+    const email = val('authEmail'); const password = val('authPassword');
+    if (!email || !password) return toast('Inserisci email e password.');
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) return toast(error.message);
+    session = data.session;
+    if (!session) return toast('Registrazione creata. Controlla eventuale email di conferma, poi accedi.');
+    await upsertProfile();
+    toast('Registrazione completata.');
+    await showApp();
+  }
+
+  async function login() {
+    const email = val('authEmail'); const password = val('authPassword');
+    if (!email || !password) return toast('Inserisci email e password.');
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return toast(error.message);
+    session = data.session;
+    toast('Accesso eseguito.');
+    await showApp();
+  }
+
+  async function upsertProfile() {
+    const user = session?.user; if (!user) return;
+    const username = val('authUsername') || user.email?.split('@')[0] || 'utente';
+    const purpose = val('authPurpose') || 'vinted_ebay';
+    const { error } = await supabase.from('profiles').upsert({ user_id:user.id, username, purpose, plan:'free' });
+    if (error) toast(`Profilo non salvato: ${error.message}`);
+  }
+
+  async function saveProduct() {
+    if (!session) return showAuthGate();
+    const calc = renderCalculation(); if (!calc) return;
+    const { input, out } = calc;
+    const row = {
+      product_name: input.productName || 'Prodotto', category: input.category, source_platform: input.mode,
+      analysis_mode: input.mode, status: input.status || 'watchlist', purchase_price: input.purchasePrice,
+      purchase_shipping: input.purchaseShipping, buyer_shipping: input.buyerShipping, real_shipping: input.realShipping,
+      packaging_cost: input.packCost, sold_avg_price: input.salePrice, all_in_cost: out.allIn, fair_value: out.fair,
+      listing_price: out.listing, min_offer: out.minOffer, break_even: out.breakEven, max_buy_price: out.maxBuy,
+      profit: out.profit, roi: out.roi, decision: out.decision, sale_price: input.status === 'sold' ? input.salePrice : null, notes: input.notes
+    };
+    const { error } = await supabase.from('products').insert(row);
+    if (error) return toast(`Errore salvataggio: ${error.message}`);
+    toast('Prodotto salvato nel database.');
+    await loadDb();
+  }
+
+  async function loadDb() {
+    if (!session) return;
+    const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending:false });
+    if (error) return toast(`Errore caricamento DB: ${error.message}`);
+    dbCache = data || [];
+    renderDb(); renderKpis();
+  }
+
+  function renderDb() {
+    const body = $('dbRows'); if (!body) return;
+    body.innerHTML = '';
+    if (!dbCache.length) { body.innerHTML = '<tr><td colspan="11">Nessun prodotto salvato.</td></tr>'; return; }
+    dbCache.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${new Date(row.created_at).toLocaleDateString('it-IT')}</td>
+        <td>${escapeHtml(row.product_name)}</td>
+        <td>${modeLabel(row.analysis_mode || row.source_platform)}</td>
+        <td>${escapeHtml(row.category || '')}</td>
+        <td><span class="status-pill">${statusLabel(row.status)}</span></td>
+        <td>${fmt(row.all_in_cost)}</td>
+        <td>${fmt(row.listing_price || row.sold_avg_price)}</td>
+        <td>${fmt(row.profit)}</td>
+        <td>${pct(row.roi)}</td>
+        <td>${escapeHtml(row.decision || '')}</td>
+        <td><button class="btn small danger" data-delete="${row.id}">Elimina</button></td>`;
+      body.appendChild(tr);
+    });
+    body.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-delete');
+      const { error } = await supabase.from('products').delete().eq('id', id);
+      if (error) return toast(error.message);
+      toast('Riga eliminata.'); await loadDb();
+    }));
+  }
+
+  function renderKpis() {
+    const items = dbCache.length;
+    const stock = dbCache.filter(x => ['in_stock','listed'].includes(x.status)).length;
+    const profit = dbCache.reduce((a,b) => a + (+b.profit || 0), 0);
+    const avgRoi = items ? dbCache.reduce((a,b) => a + (+b.roi || 0), 0) / items : 0;
+    if ($('kpiItems')) $('kpiItems').textContent = items;
+    if ($('kpiStock')) $('kpiStock').textContent = stock;
+    if ($('kpiProfit')) $('kpiProfit').textContent = fmt(profit);
+    if ($('kpiRoi')) $('kpiRoi').textContent = pct(avgRoi);
+  }
+
+  function escapeHtml(s) { return String(s ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+
+  function exportCurrentCsv() {
+    const calc = renderCalculation(); if (!calc) return;
+    const { input, out } = calc;
+    downloadCsv('flipmate-prodotto.csv', [
+      ['prodotto','modalita','categoria','costo_all_in','prezzo_annuncio','offerta_minima','break_even','utile','roi','decisione'],
+      [input.productName, modeLabel(input.mode), input.category, out.allIn, out.listing, out.minOffer, out.breakEven, out.profit, out.roi, out.decision]
+    ]);
+  }
+
+  function exportDbCsv() {
+    const rows = [['data','prodotto','modalita','categoria','stato','costo_all_in','prezzo_annuncio','utile','roi','decisione','note']];
+    dbCache.forEach(r => rows.push([r.created_at, r.product_name, modeLabel(r.analysis_mode || r.source_platform), r.category, statusLabel(r.status), r.all_in_cost, r.listing_price, r.profit, r.roi, r.decision, r.notes]));
+    downloadCsv('flipmate-database.csv', rows);
+  }
+
+  function showSection(name) {
+    ['calculator','database','dashboard','settings'].forEach(s => $(s + 'Section')?.classList.toggle('hidden', s !== name));
+  }
+
+  async function saveProfileSettings() {
+    const user = session?.user; if (!user) return;
+    const username = val('profileUsername') || user.email?.split('@')[0];
+    const purpose = val('profilePurpose') || 'vinted_ebay';
+    const { data, error } = await supabase.from('profiles').upsert({ user_id:user.id, username, purpose, plan:profile?.plan || 'free' }).select('*').single();
+    if (error) return toast(error.message);
+    profile = data; await applyProfileToUi(); toast('Profilo aggiornato.');
+  }
+
+  async function changeEmail() {
+    const email = val('newEmail'); if (!email) return toast('Inserisci nuova email.');
+    const { error } = await supabase.auth.updateUser({ email });
+    if (error) return toast(error.message);
+    toast('Richiesta cambio email inviata. Controlla la posta.');
+  }
+
+  async function resetPassword() {
+    const email = session?.user?.email || val('authEmail'); if (!email) return toast('Email non disponibile.');
+    const redirectTo = location.origin + location.pathname;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) return toast(error.message);
+    toast('Email reset password inviata.');
+  }
+
+  function resetCalculator() {
+    ['productName','purchasePrice','purchaseShipping','salePrice','buyerShipping','realShipping','packCost','notes'].forEach(id => { if ($(id)) $(id).value = id === 'productName' ? '' : ''; });
+    renderCalculation();
+  }
+
+  function bindAppEvents() {
+    $('signupBtn')?.addEventListener('click', signUp);
+    $('loginBtn')?.addEventListener('click', login);
+    $('logoutBtn')?.addEventListener('click', async () => { await supabase.auth.signOut(); toast('Logout eseguito.'); });
+    $('saveToDb')?.addEventListener('click', saveProduct);
+    $('refreshDb')?.addEventListener('click', loadDb);
+    $('exportDbCsv')?.addEventListener('click', exportDbCsv);
+    $('exportSingleCsv')?.addEventListener('click', exportCurrentCsv);
+    $('copySummary')?.addEventListener('click', async () => { const c = renderCalculation(); if (!c) return; await navigator.clipboard.writeText(`${c.input.productName}: ${c.out.decision}, utile ${fmt(c.out.profit)}, ROI ${pct(c.out.roi)}`); toast('Sintesi copiata.'); });
+    $('analysisMode')?.addEventListener('change', applyModeFields);
+    $('savePurpose')?.addEventListener('click', saveProfileSettings);
+    $('saveProfile')?.addEventListener('click', saveProfileSettings);
+    $('changeEmail')?.addEventListener('click', changeEmail);
+    $('resetPassword')?.addEventListener('click', resetPassword);
+    $('accountButton')?.addEventListener('click', () => showSection('settings'));
+    $('resetCalculator')?.addEventListener('click', resetCalculator);
+    document.querySelectorAll('[data-app-section]').forEach(btn => btn.addEventListener('click', () => showSection(btn.dataset.appSection)));
+    document.querySelectorAll('#calculatorForm input,#calculatorForm select,#calculatorForm textarea').forEach(el => el.addEventListener('input', renderCalculation));
+    $('profilePurpose')?.addEventListener('change', () => { if ($('analysisMode')) { $('analysisMode').value = val('profilePurpose'); applyModeFields(); } });
+  }
+
+  if (page === 'landing') landingInit();
+  if (page === 'app') appInit();
 })();
