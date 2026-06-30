@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FlipMate — Calcolatore Flip Vinted/eBay</title>
+  <meta name="description" content="Calcola margini, prezzo vendita e ROI per flip da Vinted a eBay. Traccia stock, vendite e dashboard in locale." />
+  <meta name="theme-color" content="#101828" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="assets/logo.svg" alt="FlipMate logo" />
+        <div>
+          <strong>FlipMate</strong>
+          <span>Vinted → eBay</span>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Navigazione principale">
+        <button class="nav-btn active" data-tab="dashboard">Dashboard</button>
+        <button class="nav-btn" data-tab="calculator">Calcolatore</button>
+        <button class="nav-btn" data-tab="database">Database</button>
+        <button class="nav-btn" data-tab="categories">Categorie</button>
+        <button class="nav-btn" data-tab="parameters">Parametri</button>
+        <button class="nav-btn" data-tab="export">Export</button>
+      </nav>
+
+      <div class="side-card">
+        <span class="eyebrow">Regola base</span>
+        <p>Compra solo se l’utile netto è ≥ al minimo richiesto e il ROI supera il target.</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="hero">
+        <div>
+          <span class="eyebrow">Side app per flipping</span>
+          <h1>Calcola se conviene comprare su Vinted e rivendere su eBay.</h1>
+          <p>Prezzo target, sconto accettabile, break-even, prezzo massimo d’acquisto e database vendite. Tutto salvato nel browser.</p>
+        </div>
+        <div class="hero-actions">
+          <button class="btn primary" id="jumpToCalc">Nuovo calcolo</button>
+          <button class="btn ghost" id="seedDemo">Carica demo</button>
+        </div>
+      </header>
+
+      <section id="dashboard" class="tab active">
+        <div class="grid kpi-grid">
+          <article class="card kpi"><span>Ricavi lordi</span><strong id="kpiRevenue">€0,00</strong></article>
+          <article class="card kpi"><span>Utile netto</span><strong id="kpiProfit">€0,00</strong></article>
+          <article class="card kpi"><span>ROI medio</span><strong id="kpiRoi">0%</strong></article>
+          <article class="card kpi"><span>Stock attivo</span><strong id="kpiStock">€0,00</strong></article>
+        </div>
+
+        <div class="grid two">
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <span class="eyebrow">Sintesi</span>
+                <h2>Performance</h2>
+              </div>
+            </div>
+            <div class="metrics-list" id="performanceList"></div>
+          </article>
+
+          <article class="card sponsor-card">
+            <span class="eyebrow">Monetizzazione futura</span>
+            <h2>Spazio sponsor / affiliazioni</h2>
+            <p>Qui puoi integrare AdSense, affiliate link per imballi, etichette, assicurazioni spedizione o tool premium.</p>
+            <button class="btn small" data-tab-jump="export">Vedi roadmap</button>
+          </article>
+        </div>
+
+        <article class="card">
+          <div class="card-header">
+            <div>
+              <span class="eyebrow">Alert</span>
+              <h2>Pezzi da controllare</h2>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Prodotto</th><th>Categoria</th><th>Status</th><th>Giorni</th><th>Utile stimato</th><th>Azione</th>
+                </tr>
+              </thead>
+              <tbody id="alertsBody"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section id="calculator" class="tab">
+        <div class="grid two calc-layout">
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <span class="eyebrow">Input</span>
+                <h2>Nuovo calcolo</h2>
+              </div>
+              <button class="btn small" id="resetCalc">Reset</button>
+            </div>
+
+            <form id="calcForm" class="form-grid">
+              <label>Nome prodotto
+                <input id="calcName" type="text" placeholder="Es. Banpresto SSJ3 Goku Match Makers" />
+              </label>
+              <label>Categoria
+                <select id="calcCategory"></select>
+              </label>
+              <label>Prezzo medio venduto eBay
+                <input id="soldAvg" type="number" min="0" step="0.01" value="40" />
+              </label>
+              <label>Prezzo oggetto Vinted
+                <input id="vintedPrice" type="number" min="0" step="0.01" value="20" />
+              </label>
+              <label>Spedizione Vinted
+                <input id="vintedShipping" type="number" min="0" step="0.01" />
+              </label>
+              <label>Spedizione addebitata al buyer eBay
+                <input id="buyerShipping" type="number" min="0" step="0.01" />
+              </label>
+              <label>Spedizione reale tua
+                <input id="realShipping" type="number" min="0" step="0.01" />
+              </label>
+              <label>Imballo
+                <input id="packCost" type="number" min="0" step="0.01" />
+              </label>
+              <label>Promo eBay %
+                <input id="promoPct" type="number" min="0" max="30" step="0.1" />
+              </label>
+              <label>Markup annuncio %
+                <input id="markupPct" type="number" min="0" max="50" step="0.1" />
+              </label>
+            </form>
+
+            <div class="actions-row">
+              <button class="btn primary" id="saveFromCalc">Salva nel database</button>
+              <button class="btn" id="copyCalc">Copia sintesi</button>
+            </div>
+          </article>
+
+          <article class="card result-card">
+            <div class="verdict" id="verdictBox">
+              <span>Decisione</span>
+              <strong id="decision">—</strong>
+              <p id="decisionReason">Inserisci i dati per calcolare.</p>
+            </div>
+
+            <div class="result-grid">
+              <div><span>Costo Vinted all-in</span><strong id="outAllIn">€0,00</strong></div>
+              <div><span>Fair value prudente</span><strong id="outFair">€0,00</strong></div>
+              <div><span>Prezzo annuncio</span><strong id="outListing">€0,00</strong></div>
+              <div><span>Offerta minima accettabile</span><strong id="outMinOffer">€0,00</strong></div>
+              <div><span>Break-even vendita</span><strong id="outBreakEven">€0,00</strong></div>
+              <div><span>Max prezzo Vinted</span><strong id="outMaxBuy">€0,00</strong></div>
+              <div><span>Utile netto target</span><strong id="outProfit">€0,00</strong></div>
+              <div><span>ROI stimato</span><strong id="outRoi">0%</strong></div>
+            </div>
+
+            <details class="formula-box">
+              <summary>Formula usata</summary>
+              <pre>Utile netto = prezzo vendita + spedizione buyer - fee piattaforma - costo Vinted all-in - spedizione reale - imballo - promo</pre>
+            </details>
+          </article>
+        </div>
+      </section>
+
+      <section id="database" class="tab">
+        <article class="card">
+          <div class="card-header">
+            <div>
+              <span class="eyebrow">Tracking</span>
+              <h2>Database vendite</h2>
+            </div>
+            <div class="actions-row compact">
+              <button class="btn small" id="addManual">Aggiungi riga</button>
+              <button class="btn small danger" id="clearDb">Svuota DB</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="editable-table">
+              <thead>
+                <tr>
+                  <th>Prodotto</th><th>Categoria</th><th>Status</th><th>Acquisto</th><th>Listino</th><th>Vendita</th><th>Utile</th><th>ROI</th><th>Data acquisto</th><th>Data vendita</th><th>Note</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="dbBody"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section id="categories" class="tab">
+        <article class="card">
+          <div class="card-header">
+            <div>
+              <span class="eyebrow">Sourcing</span>
+              <h2>Categorie e regole</h2>
+            </div>
+          </div>
+          <div class="category-grid" id="categoryCards"></div>
+        </article>
+      </section>
+
+      <section id="parameters" class="tab">
+        <article class="card">
+          <div class="card-header">
+            <div>
+              <span class="eyebrow">Config</span>
+              <h2>Parametri economici</h2>
+            </div>
+            <button class="btn small" id="resetParams">Ripristina default</button>
+          </div>
+
+          <form id="paramsForm" class="form-grid param-grid"></form>
+          <p class="muted">Modifica questi valori se cambiano fee, spedizioni, imballi o target margine. I dati restano nel tuo browser.</p>
+        </article>
+      </section>
+
+      <section id="export" class="tab">
+        <div class="grid two">
+          <article class="card">
+            <span class="eyebrow">Backup</span>
+            <h2>Export / Import</h2>
+            <p>Esporta il database per Excel o salva un backup JSON completo.</p>
+            <div class="actions-row wrap">
+              <button class="btn primary" id="exportCsv">Scarica CSV</button>
+              <button class="btn" id="exportJson">Scarica JSON</button>
+              <label class="btn file-label">Import JSON<input id="importJson" type="file" accept="application/json" hidden /></label>
+            </div>
+          </article>
+
+          <article class="card">
+            <span class="eyebrow">Roadmap business</span>
+            <h2>Come monetizzarla</h2>
+            <ol class="roadmap">
+              <li>Free app pubblica con calculator + DB locale.</li>
+              <li>SEO: guide “come vendere su Vinted/eBay”, categorie, tool gratuiti.</li>
+              <li>Affiliate: imballi, etichette, bilance, sleeve, box protettivi.</li>
+              <li>Premium futuro: account cloud, scan codice prodotto, alert prezzo, storico venduti.</li>
+              <li>Ads leggeri solo dopo traffico organico.</li>
+            </ol>
+          </article>
+        </div>
+
+        <article class="card">
+          <span class="eyebrow">Privacy</span>
+          <h2>Pronta per GitHub Pages</h2>
+          <p>Nessun backend. Nessun dato inviato a server. Tutto vive in <code>localStorage</code>. Puoi pubblicarla subito come progetto open source e aggiungere un backend solo in fase 2.</p>
+          <p><a href="privacy.html">Privacy</a> · <a href="terms.html">Termini</a></p>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
