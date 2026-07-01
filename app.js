@@ -180,13 +180,7 @@
     location.href = 'app.html';
   }
 
-  async function resetPasswordFromLogin() {
-    const email = val('loginEmail');
-    if (!email) return toast('Email');
-    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname.replace('login.html','app.html') });
-    if (error) return toast(error.message);
-    toast(t('messages.resetSent'));
-  }
+  async function resetPasswordFromLogin() { location.href = 'reset-request.html'; }
 
   async function appInit() {
     supabase = ensureSupabase();
@@ -236,6 +230,7 @@
     if ($('profileUsername')) $('profileUsername').value = name;
     if ($('profileEmail')) $('profileEmail').value = user?.email || '';
     if ($('planStatus')) $('planStatus').textContent = lang === 'it' ? `Piano attuale: ${(profile?.plan || 'free').toUpperCase()}` : `Current plan: ${(profile?.plan || 'free').toUpperCase()}`;
+    if ($('appSectionMobileSelect')) $('appSectionMobileSelect').value = 'home';
     applyModeFields();
   }
 
@@ -254,10 +249,63 @@
     await loadDb(); showSection('database');
   }
 
-  async function loadDb() { if (!session) return; const { data, error } = await supabase.from('products').select('*').order('created_at',{ascending:false}); if (error) return toast(`Errore caricamento DB: ${error.message}`); dbCache = data || []; applyFilters(); renderKpis(); renderAnalytics(); }
+  async function loadDb() { if (!session) return; const { data, error } = await supabase.from('products').select('*').order('created_at',{ascending:false}); if (error) return toast(`Errore caricamento DB: ${error.message}`); dbCache = data || []; populateDashboardFilters(); applyFilters(); renderKpis(); renderAnalytics(); }
   function productSaleValue(row) { return +(row.sale_price ?? row.listing_price ?? row.sold_avg_price ?? 0) || 0; }
   function netSaleValue(row) { return productSaleValue(row) - (+row.real_shipping || 0) - (+row.packaging_cost || 0); }
   function readRange(minId,maxId) { const minRaw=$(minId)?.value, maxRaw=$(maxId)?.value; return { min:minRaw===''||minRaw==null?-Infinity:parseFloat(minRaw), max:maxRaw===''||maxRaw==null?Infinity:parseFloat(maxRaw) }; }
+
+  function rowCreatedDate(row) { return new Date(row.created_at || Date.now()); }
+  function rowEventDate(row) { return new Date(row.sale_date || row.created_at || Date.now()); }
+  function inYearMonth(date, year, month) { const y = Number(year), m = month === 'all' ? 'all' : Number(month); if (!y || Number.isNaN(y)) return true; if (date.getFullYear() !== y) return false; if (m === 'all' || !m) return true; return date.getMonth() + 1 === m; }
+  function aggregateMetrics(rows) {
+    const soldRows = rows.filter(x => x.status === 'sold');
+    return {
+      stockPieces: rows.filter(x => ['in_stock','listed'].includes(x.status)).length,
+      costs: rows.reduce((a,b)=>a+(+b.all_in_cost || +b.purchase_price || 0),0),
+      probableSales: rows.filter(x => ['in_stock','listed'].includes(x.status)).reduce((a,b)=>a+productSaleValue(b),0),
+      netSales: soldRows.reduce((a,b)=>a+netSaleValue(b),0),
+      profit: rows.reduce((a,b)=>a+(+b.profit || 0),0),
+      grossRevenue: soldRows.reduce((a,b)=>a+productSaleValue(b),0)
+    };
+  }
+  function currentYearRows() { const year = new Date().getFullYear(); return dbCache.filter(row => rowCreatedDate(row).getFullYear() === year); }
+  function currentMonthRows() { const now = new Date(); return dbCache.filter(row => rowCreatedDate(row).getFullYear() === now.getFullYear() && rowCreatedDate(row).getMonth() === now.getMonth()); }
+  function allYears() { const years = [...new Set(dbCache.map(r => rowCreatedDate(r).getFullYear()))].sort((a,b)=>b-a); return years.length ? years : [new Date().getFullYear()]; }
+  function populateDashboardFilters() {
+    const yearSel = $('dashboardYear'), compareYear = $('compareYear'), monthSel = $('dashboardMonth'), compareMonth = $('compareMonth');
+    if (!yearSel || !compareYear || !monthSel || !compareMonth) return;
+    const years = allYears();
+    const currentYear = String(new Date().getFullYear());
+    const currentMonth = String(new Date().getMonth() + 1);
+    const yearOptions = years.map(y => `<option value="${y}">${y}</option>`).join('');
+    if (!yearSel.dataset.ready) {
+      yearSel.innerHTML = yearOptions;
+      compareYear.innerHTML = `<option value="">${lang==='it'?'Nessun confronto':'No comparison'}</option>` + yearOptions;
+      yearSel.value = yearSel.querySelector(`option[value="${currentYear}"]`) ? currentYear : String(years[0]);
+      compareYear.value = '';
+      yearSel.dataset.ready = compareYear.dataset.ready = '1';
+    } else {
+      const prev1 = yearSel.value, prev2 = compareYear.value;
+      yearSel.innerHTML = yearOptions;
+      compareYear.innerHTML = `<option value="">${lang==='it'?'Nessun confronto':'No comparison'}</option>` + yearOptions;
+      yearSel.value = yearSel.querySelector(`option[value="${prev1}"]`) ? prev1 : String(years[0]);
+      compareYear.value = prev2 && compareYear.querySelector(`option[value="${prev2}"]`) ? prev2 : '';
+    }
+    const labels = lang==='it' ? ['Tutti','Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'] : ['All','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const monthOptions = ['all',...Array.from({length:12},(_,i)=>String(i+1))].map((m,i)=>`<option value="${m}">${labels[i]}</option>`).join('');
+    if (!monthSel.dataset.ready) {
+      monthSel.innerHTML = monthOptions; compareMonth.innerHTML = monthOptions; monthSel.value='all'; compareMonth.value='all'; monthSel.dataset.ready = compareMonth.dataset.ready = '1';
+    } else { const p1 = monthSel.value, p2 = compareMonth.value; monthSel.innerHTML = monthOptions; compareMonth.innerHTML = monthOptions; monthSel.value = p1 || 'all'; compareMonth.value = p2 || 'all'; }
+    if (!$('chartLayoutMode')?.dataset.ready) { $('chartLayoutMode') && ($('chartLayoutMode').dataset.ready='1'); $('chartLayoutMode') && ($('chartLayoutMode').value='paired'); }
+    updateChartLayout();
+  }
+  function updateChartLayout() { const grid = $('analyticsGrid'); if (!grid) return; grid.classList.toggle('single-column', ($('chartLayoutMode')?.value || 'paired') === 'single'); }
+  function dashboardRowsFromSelectors(yearId, monthId) {
+    const year = $(yearId)?.value || String(new Date().getFullYear());
+    const month = $(monthId)?.value || 'all';
+    return dbCache.filter(row => inYearMonth(rowCreatedDate(row), year, month));
+  }
+  function setMaybe(id, value, formatter=fmt) { if ($(id)) $(id).textContent = formatter(value); }
 
   function applyFilters() {
     if (!$('dbRows')) return;
@@ -283,41 +331,80 @@
   async function updateProductStatus(id, status) { const payload = { status }; if (status === 'sold') { const row = dbCache.find(x=>x.id===id); payload.sale_date = row?.sale_date || new Date().toISOString().slice(0,10); payload.sale_price = row?.sale_price || row?.sold_avg_price || row?.listing_price || null; } const { error } = await supabase.from('products').update(payload).eq('id',id); if(error) return toast(`Errore aggiornamento stato: ${error.message}`); toast(t('messages.updatedStatus')(statusLabel(status))); await loadDb(); }
   async function bulkUpdateStatus() { const status = val('bulkStatus') || 'in_stock'; const ids = filteredDbCache.map(x=>x.id); if(!ids.length) return toast(t('messages.noFiltered')); if(!confirm(t('messages.confirmBulk')(ids.length, statusLabel(status)))) return; const payload = { status }; if(status==='sold') { payload.sale_date = new Date().toISOString().slice(0,10); } const { error } = await supabase.from('products').update(payload).in('id', ids); if(error) return toast(`Errore aggiornamento: ${error.message}`); toast(t('messages.bulkDone')(ids.length)); await loadDb(); }
 
+
+
   function renderKpis() {
-    const stockRows = dbCache.filter(x => ['in_stock','listed'].includes(x.status));
-    const stockPieces = stockRows.length;
-    const costs = stockRows.reduce((a,b)=>a+(+b.all_in_cost || +b.purchase_price || 0),0);
-    const probableSales = stockRows.reduce((a,b)=>a+productSaleValue(b),0);
-    const sold = dbCache.filter(x=>x.status==='sold');
-    const netSales = sold.reduce((a,b)=>a+netSaleValue(b),0);
-    const profit = dbCache.reduce((a,b)=>a+(+b.profit || 0),0);
-    const gross = sold.reduce((a,b)=>a+productSaleValue(b),0);
-    const top = topCategoryByMargin();
-    const sellThrough = dbCache.length ? sold.length/dbCache.length*100 : 0;
-    setTextAll('[data-kpi="stockPieces"]', stockPieces);
-    setTextAll('[data-kpi="costs"]', fmt(costs));
-    setTextAll('[data-kpi="probableSales"]', fmt(probableSales));
-    setTextAll('[data-kpi="netSales"]', fmt(netSales));
-    setTextAll('[data-kpi="profit"]', fmt(profit));
-    setTextAll('[data-kpi="grossRevenue"]', fmt(gross));
+    const ytdRows = currentYearRows();
+    const metrics = aggregateMetrics(ytdRows);
+    const top = topCategoryByMargin(ytdRows);
+    setTextAll('[data-kpi="stockPieces"]', metrics.stockPieces);
+    setTextAll('[data-kpi="costs"]', fmt(metrics.costs));
+    setTextAll('[data-kpi="probableSales"]', fmt(metrics.probableSales));
+    setTextAll('[data-kpi="netSales"]', fmt(metrics.netSales));
+    setTextAll('[data-kpi="profit"]', fmt(metrics.profit));
+    setTextAll('[data-kpi="grossRevenue"]', fmt(metrics.grossRevenue));
     setTextAll('[data-kpi="topCategory"]', top?.category ? categoryLabel(top.category) : '—');
+    const soldYtd = ytdRows.filter(x => x.status === 'sold');
+    const sellThrough = ytdRows.length ? soldYtd.length / ytdRows.length * 100 : 0;
     setTextAll('[data-kpi="sellThrough"]', pct(sellThrough));
   }
-  function topCategoryByMargin() { const map = new Map(); dbCache.forEach(row=>{ const cat=categoryKey(row.category); const curr=map.get(cat)||{category:cat,profit:0,count:0,revenue:0}; curr.profit += +row.profit || 0; curr.revenue += productSaleValue(row); curr.count += 1; map.set(cat,curr); }); return [...map.values()].sort((a,b)=>b.profit-a.profit)[0] || null; }
+  function topCategoryByMargin(rows=dbCache) {
+    const map = new Map();
+    rows.forEach(row => {
+      const cat = categoryKey(row.category);
+      const curr = map.get(cat) || { category: cat, profit: 0, count: 0, revenue: 0 };
+      curr.profit += +row.profit || 0;
+      curr.revenue += productSaleValue(row);
+      curr.count += 1;
+      map.set(cat, curr);
+    });
+    return [...map.values()].sort((a,b)=>b.profit-a.profit)[0] || null;
+  }
   function exportCurrentCsv() { const calc=renderCalculation(); if(!calc)return; const {input,out}=calc; downloadCsv('flipmate-prodotto.csv', [['prodotto','modalita','categoria','stato','costo_all_in','prezzo_annuncio','offerta_minima','break_even','utile','roi','decisione'], [input.productName, modeLabel(input.mode), categoryLabel(input.category), statusLabel(input.status), out.allIn, out.listing, out.minOffer, out.breakEven, out.profit, out.roi, out.decision]]); }
   function exportDbCsv() { const source = filteredDbCache.length ? filteredDbCache : dbCache; const rows = [['data','prodotto','modalita','categoria','stato','costo_acquisto','prezzo_vendita','utile','roi','decisione','note']]; source.forEach(r=>rows.push([r.created_at,r.product_name,modeLabel(r.analysis_mode||r.source_platform),categoryLabel(r.category),statusLabel(r.status),r.all_in_cost,productSaleValue(r),r.profit,r.roi,r.decision,r.notes])); downloadCsv('flipmate-database-filtrato.csv', rows); }
 
-  function showSection(name) { ['home','calculator','database','dashboard','settings'].forEach(s => $(s+'Section')?.classList.toggle('hidden', s !== name)); document.querySelectorAll('[data-app-section]').forEach(b => b.classList.toggle('primary', b.dataset.appSection===name)); if(name==='dashboard') renderAnalytics(); if(name==='database') applyFilters(); window.scrollTo({top:0, behavior:'smooth'}); }
+  function showSection(name) {
+    ['home','calculator','database','dashboard','settings'].forEach(s => $(s+'Section')?.classList.toggle('hidden', s !== name));
+    document.querySelectorAll('[data-app-section]').forEach(b => b.classList.toggle('active', b.dataset.appSection===name));
+    if ($('appSectionMobileSelect')) $('appSectionMobileSelect').value = name;
+    if (name === 'dashboard') renderAnalytics();
+    if (name === 'database') applyFilters();
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
   function chartClear(canvas) { const ctx=canvas?.getContext('2d'); if(!canvas||!ctx)return null; ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle='#617086'; ctx.font='13px system-ui,-apple-system,Segoe UI,sans-serif'; return ctx; }
   function drawNoData(canvasId,text=t('messages.noData')) { const canvas=$(canvasId), ctx=chartClear(canvas); if(!ctx)return; ctx.fillText(text,24,44); }
   function drawBarChart(canvasId,data,formatter=fmt) { const canvas=$(canvasId), ctx=chartClear(canvas); if(!ctx)return; if(!data.length||data.every(d=>!d.value))return drawNoData(canvasId); const w=canvas.width,h=canvas.height,pad=46,max=Math.max(...data.map(d=>Math.abs(d.value)),1),barW=Math.max(28,(w-pad*2)/data.length*.58); data.forEach((d,i)=>{ const x=pad+i*((w-pad*2)/data.length)+barW*.25,bh=Math.max(4,Math.abs(d.value)/max*(h-pad*2)),y=h-pad-bh; const grad=ctx.createLinearGradient(0,y,0,h-pad); grad.addColorStop(0,'#0bbf8a'); grad.addColorStop(1,'#247cff'); ctx.fillStyle=grad; ctx.fillRect(x,y,barW,bh); ctx.fillStyle='#132033'; ctx.fillText(formatter(d.value),x,Math.max(18,y-8)); ctx.fillStyle='#617086'; ctx.fillText(String(d.label).slice(0,14),x,h-18); }); }
   function drawLineChart(canvasId,data) { const canvas=$(canvasId),ctx=chartClear(canvas); if(!ctx)return; if(data.length<2)return drawNoData(canvasId,t('messages.trendNeed')); const w=canvas.width,h=canvas.height,pad=46,max=Math.max(...data.map(d=>d.value),1),min=Math.min(...data.map(d=>d.value),0),range=Math.max(max-min,1); const point=(d,i)=>({x:pad+i*((w-pad*2)/(data.length-1)), y:h-pad-((d.value-min)/range)*(h-pad*2)}); ctx.strokeStyle='#0bbf8a'; ctx.lineWidth=3; ctx.beginPath(); data.forEach((d,i)=>{const p=point(d,i); if(i===0)ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);}); ctx.stroke(); data.forEach((d,i)=>{const p=point(d,i); ctx.fillStyle='#247cff'; ctx.beginPath(); ctx.arc(p.x,p.y,5,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#617086'; ctx.fillText(d.label,p.x-18,h-18); ctx.fillStyle='#132033'; ctx.fillText(fmt(d.value),p.x-22,p.y-12);}); }
-  function renderAnalytics() { if(!$('revenueChart'))return; const sold=dbCache.filter(x=>x.status==='sold'), gross=sold.reduce((a,b)=>a+productSaleValue(b),0), net=sold.reduce((a,b)=>a+netSaleValue(b),0); drawBarChart('revenueChart',[{label: lang==='it'?'Ricavi lordi':'Gross rev.', value:gross},{label: lang==='it'?'Vendita netta':'Net sales', value:net}]); const categories=new Map(); dbCache.forEach(row=>{const cat=categoryKey(row.category), curr=categories.get(cat)||{label:categoryLabel(cat),value:0,count:0,revenue:0}; curr.value += +row.profit || 0; curr.revenue += productSaleValue(row); curr.count += 1; categories.set(cat,curr);}); const catData=[...categories.values()].sort((a,b)=>b.value-a.value).slice(0,6); drawBarChart('categoryMarginChart',catData); renderCategoryRanking(catData); const monthly=new Map(); dbCache.forEach(row=>{const dt=new Date(row.sale_date||row.created_at), key=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; monthly.set(key,(monthly.get(key)||0)+(+row.profit||0));}); const trend=[...monthly.entries()].sort(([a],[b])=>a.localeCompare(b)).slice(-8).map(([label,value])=>({label:label.slice(5),value})); drawLineChart('profitTrendChart',trend); }
+  function renderAnalytics() {
+    if(!$('revenueChart'))return;
+    updateChartLayout();
+    const ytd = aggregateMetrics(currentYearRows());
+    const mtd = aggregateMetrics(currentMonthRows());
+    const selectedRows = dashboardRowsFromSelectors('dashboardYear','dashboardMonth');
+    const selected = aggregateMetrics(selectedRows);
+    const compareRows = $('compareYear')?.value ? dbCache.filter(row => inYearMonth(rowCreatedDate(row), $('compareYear').value, $('compareMonth')?.value || 'all')) : [];
+    const compare = aggregateMetrics(compareRows);
+    setMaybe('ytdGrossRevenue', ytd.grossRevenue); setMaybe('ytdNetSales', ytd.netSales); setMaybe('ytdProfit', ytd.profit); setMaybe('ytdCosts', ytd.costs);
+    setMaybe('mtdGrossRevenue', mtd.grossRevenue); setMaybe('mtdNetSales', mtd.netSales); setMaybe('mtdProfit', mtd.profit); setMaybe('mtdCosts', mtd.costs);
+    setMaybe('selectedGrossRevenue', selected.grossRevenue); setMaybe('selectedNetSales', selected.netSales); setMaybe('selectedProfit', selected.profit); setMaybe('selectedCosts', selected.costs);
+    setMaybe('deltaGrossRevenue', selected.grossRevenue - compare.grossRevenue); setMaybe('deltaNetSales', selected.netSales - compare.netSales); setMaybe('deltaProfit', selected.profit - compare.profit); setMaybe('deltaCosts', selected.costs - compare.costs);
+    const revBars = [{label: lang==='it'?'Periodo lordo':'Selected gross', value:selected.grossRevenue},{label: lang==='it'?'Periodo netto':'Selected net', value:selected.netSales}];
+    if (compareRows.length) { revBars.push({label: lang==='it'?'Confr. lordo':'Compare gross', value:compare.grossRevenue},{label: lang==='it'?'Confr. netto':'Compare net', value:compare.netSales}); }
+    drawBarChart('revenueChart', revBars);
+    const categories=new Map(); selectedRows.forEach(row=>{const cat=categoryKey(row.category), curr=categories.get(cat)||{label:categoryLabel(cat),value:0,count:0,revenue:0}; curr.value += +row.profit || 0; curr.revenue += productSaleValue(row); curr.count += 1; categories.set(cat,curr);});
+    const catData=[...categories.values()].sort((a,b)=>b.value-a.value).slice(0,6);
+    drawBarChart('categoryMarginChart',catData);
+    renderCategoryRanking(catData);
+    const trendYear = $('dashboardYear')?.value || String(new Date().getFullYear());
+    const monthly=new Map(); dbCache.filter(r => rowCreatedDate(r).getFullYear() === Number(trendYear)).forEach(row=>{const dt=rowCreatedDate(row), key=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; monthly.set(key,(monthly.get(key)||0)+(+row.profit||0));});
+    const trend=[...monthly.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([label,value])=>({label:label.slice(5),value}));
+    drawLineChart('profitTrendChart',trend);
+  }
   function renderCategoryRanking(data) { const box=$('categoryRanking'); if(!box)return; if(!data.length){box.innerHTML=`<p class="fineprint">${t('messages.noCategories')}</p>`;return;} box.innerHTML=data.map((d,i)=>`<div class="ranking-row"><span>${i+1}</span><strong>${escapeHtml(d.label)}</strong><em>${fmt(d.value)} ${lang==='it'?'margine':'margin'} · ${d.count} ${lang==='it'?'prodotti':'products'}</em></div>`).join(''); }
 
   async function saveProfileSettings() { const user=session?.user; if(!user)return; await upsertProfile(val('profileUsername'), val('profilePurpose')); await applyProfileToUi(); toast(t('messages.profileSaved')); }
   async function changeEmail() { const email=val('newEmail'); if(!email)return toast('Email'); const {error}=await supabase.auth.updateUser({email}); if(error)return toast(error.message); toast(t('messages.emailChange')); }
-  async function resetPassword() { const email=session?.user?.email; if(!email)return toast('Email'); const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo: location.origin + location.pathname}); if(error)return toast(error.message); toast(t('messages.resetSent')); }
+  async function resetPassword() { const email=session?.user?.email; if(!email)return toast('Email'); const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo: location.origin + location.pathname.replace('app.html','reset-password.html')}); if(error)return toast(error.message); toast(t('messages.resetSent')); }
   function resetCalculator() { ['productName','purchasePrice','purchaseShipping','salePrice','buyerShipping','realShipping','packCost','notes'].forEach(id=>{ if($(id)) $(id).value = id==='productName' ? '' : ''; }); if($('status')) $('status').value='watchlist'; renderCalculation(); }
 
   function bindAppEvents() {
@@ -327,6 +414,8 @@
     $('analysisMode')?.addEventListener('change', applyModeFields); $('savePurpose')?.addEventListener('click', saveProfileSettings); $('saveProfile')?.addEventListener('click', saveProfileSettings); $('changeEmail')?.addEventListener('click', changeEmail); $('resetPassword')?.addEventListener('click', resetPassword); $('accountButton')?.addEventListener('click', ()=>showSection('settings')); $('resetCalculator')?.addEventListener('click', resetCalculator); $('applyFilters')?.addEventListener('click', applyFilters); $('resetFilters')?.addEventListener('click', resetFilters);
     ['filterMode','filterCategory','filterStatus','filterSaleMin','filterSaleMax','filterProfitMin','filterProfitMax','filterCostMin','filterCostMax'].forEach(id=>{ $(id)?.addEventListener('input',applyFilters); $(id)?.addEventListener('change',applyFilters); });
     document.querySelectorAll('[data-app-section]').forEach(btn=>btn.addEventListener('click',()=>showSection(btn.dataset.appSection)));
+    $('appSectionMobileSelect')?.addEventListener('change', e => showSection(e.target.value));
+    ['dashboardYear','dashboardMonth','compareYear','compareMonth','chartLayoutMode'].forEach(id=>{ $(id)?.addEventListener('change', renderAnalytics); });
     document.querySelectorAll('#calculatorForm input,#calculatorForm select,#calculatorForm textarea').forEach(el=>{ el.addEventListener('input', renderCalculation); el.addEventListener('change', renderCalculation); });
     $('profilePurpose')?.addEventListener('change',()=>{ if($('analysisMode')){ $('analysisMode').value=val('profilePurpose'); applyModeFields(); }});
   }

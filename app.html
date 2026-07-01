@@ -17,12 +17,23 @@
       <span>FlipMate</span>
     </a>
     <nav class="topnav app-nav" aria-label="App navigation">
-      <button class="btn ghost" data-app-section="home" data-i18n="app.navHome">Home</button>
-      <button class="btn ghost" data-app-section="calculator" data-i18n="app.navCalculator">Calcolatore</button>
-      <button class="btn ghost" data-app-section="database" data-i18n="app.navDatabase">Database</button>
-      <button class="btn ghost" data-app-section="dashboard" data-i18n="app.navDashboard">Dashboard</button>
-      <button class="btn ghost" data-app-section="settings" data-i18n="app.navSettings">Impostazioni</button>
+      <div class="app-nav-desktop">
+        <button class="btn ghost" data-app-section="home">Home</button>
+        <button class="btn ghost" data-app-section="calculator">Calcolatore</button>
+        <button class="btn ghost" data-app-section="database">Database</button>
+        <button class="btn ghost" data-app-section="dashboard">Dashboard</button>
+        <button class="btn ghost" data-app-section="settings">Impostazioni</button>
+      </div>
       <label class="lang-picker compact-lang"><span data-i18n="common.lang">Lingua</span><select id="languageSelect"><option value="it">IT</option><option value="en">EN</option></select></label>
+      <label class="app-mobile-nav hidden-desktop"><span>Vai a</span>
+        <select id="appSectionMobileSelect">
+          <option value="home">Home</option>
+          <option value="calculator">Calcolatore</option>
+          <option value="database">Database</option>
+          <option value="dashboard">Dashboard</option>
+          <option value="settings">Impostazioni</option>
+        </select>
+      </label>
       <button class="btn primary" id="accountButton">Account</button>
     </nav>
   </header>
@@ -48,30 +59,36 @@
       </div>
 
       <div class="global-kpis kpi-grid compact-kpis" aria-label="Global KPIs">
-        <article class="kpi"><span data-i18n="kpi.stockPieces">Pezzi in stock</span><strong data-kpi="stockPieces">0</strong></article>
-        <article class="kpi"><span data-i18n="kpi.costs">Costi sostenuti</span><strong data-kpi="costs">€0,00</strong></article>
-        <article class="kpi"><span data-i18n="kpi.probableSales">Vendita probabile</span><strong data-kpi="probableSales">€0,00</strong></article>
-        <article class="kpi"><span data-i18n="kpi.netSales">Vendita netta</span><strong data-kpi="netSales">€0,00</strong></article>
-        <article class="kpi"><span data-i18n="kpi.profit">Utile</span><strong data-kpi="profit">€0,00</strong></article>
+        <article class="kpi"><span>YTD · <span data-i18n="kpi.stockPieces">Pezzi in stock</span></span><strong data-kpi="stockPieces">0</strong></article>
+        <article class="kpi"><span>YTD · <span data-i18n="kpi.costs">Costi sostenuti</span></span><strong data-kpi="costs">€0,00</strong></article>
+        <article class="kpi"><span>YTD · <span data-i18n="kpi.probableSales">Vendita probabile</span></span><strong data-kpi="probableSales">€0,00</strong></article>
+        <article class="kpi"><span>YTD · <span data-i18n="kpi.netSales">Vendita netta</span></span><strong data-kpi="netSales">€0,00</strong></article>
+        <article class="kpi"><span>YTD · <span data-i18n="kpi.profit">Utile</span></span><strong data-kpi="profit">€0,00</strong></article>
       </div>
 
       <section id="homeSection" class="app-section">
         <div class="section-heading left app-section-heading">
-          <span class="eyebrow" data-i18n="app.navHome">Home</span>
-          <h2 data-i18n="home.title">Panoramica rapida</h2>
-          <p data-i18n="home.subtitle">Le caselle mostrano stock, costi, vendita probabile, vendita netta e utile. I grafici completi sono nella Dashboard.</p>
+          <span class="eyebrow">Home</span>
+          <h2>Panoramica rapida</h2>
+          <p>Qui vedi un riepilogo rapido. Le KPI in alto sono YTD; i dettagli avanzati e i confronti sono nella Dashboard.</p>
         </div>
-        <div class="kpi-grid home-kpis">
-          <article class="kpi big-kpi"><span data-i18n="kpi.stockPieces">Pezzi in stock</span><strong data-kpi="stockPieces">0</strong></article>
-          <article class="kpi big-kpi"><span data-i18n="kpi.costs">Costi sostenuti</span><strong data-kpi="costs">€0,00</strong></article>
-          <article class="kpi big-kpi"><span data-i18n="kpi.probableSales">Vendita probabile</span><strong data-kpi="probableSales">€0,00</strong></article>
-          <article class="kpi big-kpi"><span data-i18n="kpi.netSales">Vendita netta</span><strong data-kpi="netSales">€0,00</strong></article>
-          <article class="kpi big-kpi"><span data-i18n="kpi.profit">Utile</span><strong data-kpi="profit">€0,00</strong></article>
-        </div>
-        <div class="actions-row wrap home-actions">
-          <button class="btn primary" data-app-section="calculator" data-i18n="home.addProduct">Aggiungi prodotto</button>
-          <button class="btn ghost" data-app-section="database" data-i18n="home.openDb">Apri database</button>
-          <button class="btn ghost" data-app-section="dashboard" data-i18n="home.openDashboard">Vai alla dashboard</button>
+        <div class="grid two home-split-grid">
+          <article class="card">
+            <h3>Azioni rapide</h3>
+            <div class="actions-row wrap home-actions vertical-on-mobile">
+              <button class="btn primary" data-app-section="calculator">Aggiungi prodotto</button>
+              <button class="btn ghost" data-app-section="database">Apri database</button>
+              <button class="btn ghost" data-app-section="dashboard">Vai alla dashboard</button>
+            </div>
+          </article>
+          <article class="card">
+            <h3>Note KPI</h3>
+            <ul class="clean-list compact-list">
+              <li>Le KPI globali restano visibili in tutte le sezioni.</li>
+              <li>I costi sostenuti non si azzerano quando un articolo passa a “Venduto”.</li>
+              <li>Dashboard = MTD, YTD, selezione periodo e confronto Delta.</li>
+            </ul>
+          </article>
         </div>
       </section>
 
@@ -197,26 +214,53 @@
 
       <section id="dashboardSection" class="app-section hidden">
         <div class="section-heading left app-section-heading">
-          <span class="eyebrow" data-i18n="app.navDashboard">Dashboard</span>
-          <h2 data-i18n="dashboard.title">Analytics approfondite</h2>
-          <p data-i18n="dashboard.subtitle">Caselle KPI + grafici per ricavi lordi, vendita netta, margini categoria e trend utile.</p>
+          <span class="eyebrow">Dashboard</span>
+          <h2>Analytics approfondite</h2>
+          <p>Seleziona anno, mese e confronto per leggere KPI MTD, YTD e Delta. I grafici possono essere mostrati in coppia o singolarmente.</p>
         </div>
-        <div class="kpi-grid dashboard-kpis">
-          <article class="kpi"><span data-i18n="kpi.stockPieces">Pezzi in stock</span><strong data-kpi="stockPieces">0</strong></article>
-          <article class="kpi"><span data-i18n="kpi.costs">Costi sostenuti</span><strong data-kpi="costs">€0,00</strong></article>
-          <article class="kpi"><span data-i18n="kpi.probableSales">Vendita probabile</span><strong data-kpi="probableSales">€0,00</strong></article>
-          <article class="kpi"><span data-i18n="kpi.netSales">Vendita netta</span><strong data-kpi="netSales">€0,00</strong></article>
-          <article class="kpi"><span data-i18n="kpi.profit">Utile</span><strong data-kpi="profit">€0,00</strong></article>
-          <article class="kpi premium-kpi"><span data-i18n="kpi.grossRevenue">Ricavi lordi venduti</span><strong data-kpi="grossRevenue">€0,00</strong></article>
-          <article class="kpi premium-kpi"><span data-i18n="kpi.topCategory">Categoria top margine</span><strong data-kpi="topCategory">—</strong></article>
-          <article class="kpi premium-kpi"><span data-i18n="kpi.sellThrough">Sell-through</span><strong data-kpi="sellThrough">0%</strong></article>
+        <article class="card dashboard-filter-card">
+          <div class="form-grid filters-grid dashboard-control-grid">
+            <label><span>Anno</span><select id="dashboardYear"></select></label>
+            <label><span>Mese</span><select id="dashboardMonth"></select></label>
+            <label><span>Anno confronto</span><select id="compareYear"></select></label>
+            <label><span>Mese confronto</span><select id="compareMonth"></select></label>
+            <label><span>Vista grafici</span><select id="chartLayoutMode"><option value="paired">A coppie</option><option value="single">Uno per riga</option></select></label>
+          </div>
+        </article>
+
+        <div class="dashboard-block">
+          <h3>MTD / YTD</h3>
+          <div class="kpi-grid dashboard-kpis dashboard-summary-grid">
+            <article class="kpi"><span>YTD Ricavi lordi</span><strong id="ytdGrossRevenue">€0,00</strong></article>
+            <article class="kpi"><span>YTD Vendita netta</span><strong id="ytdNetSales">€0,00</strong></article>
+            <article class="kpi"><span>YTD Utile</span><strong id="ytdProfit">€0,00</strong></article>
+            <article class="kpi"><span>YTD Costi sostenuti</span><strong id="ytdCosts">€0,00</strong></article>
+            <article class="kpi"><span>MTD Ricavi lordi</span><strong id="mtdGrossRevenue">€0,00</strong></article>
+            <article class="kpi"><span>MTD Vendita netta</span><strong id="mtdNetSales">€0,00</strong></article>
+            <article class="kpi"><span>MTD Utile</span><strong id="mtdProfit">€0,00</strong></article>
+            <article class="kpi"><span>MTD Costi sostenuti</span><strong id="mtdCosts">€0,00</strong></article>
+          </div>
         </div>
 
-        <div class="grid two analytics-grid">
-          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3 data-i18n="dashboard.revenueChart">Ricavi lordi vs vendita netta</h3></div></div><canvas id="revenueChart" width="640" height="320" aria-label="Revenue chart"></canvas></article>
-          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3 data-i18n="dashboard.categoryChart">Margine per categoria</h3></div></div><canvas id="categoryMarginChart" width="640" height="320" aria-label="Category margin chart"></canvas></article>
-          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3 data-i18n="dashboard.trendChart">Trend utile mensile</h3></div></div><canvas id="profitTrendChart" width="640" height="320" aria-label="Profit trend chart"></canvas></article>
-          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Insight</span><h3 data-i18n="dashboard.ranking">Classifica categorie</h3></div></div><div id="categoryRanking" class="ranking-list"></div></article>
+        <div class="dashboard-block">
+          <h3>Periodo selezionato e confronto</h3>
+          <div class="kpi-grid dashboard-kpis dashboard-summary-grid">
+            <article class="kpi premium-kpi"><span>Periodo Ricavi lordi</span><strong id="selectedGrossRevenue">€0,00</strong></article>
+            <article class="kpi premium-kpi"><span>Periodo Vendita netta</span><strong id="selectedNetSales">€0,00</strong></article>
+            <article class="kpi premium-kpi"><span>Periodo Utile</span><strong id="selectedProfit">€0,00</strong></article>
+            <article class="kpi premium-kpi"><span>Periodo Costi</span><strong id="selectedCosts">€0,00</strong></article>
+            <article class="kpi premium-kpi"><span>Delta Ricavi lordi</span><strong id="deltaGrossRevenue">€0,00</strong></article>
+            <article class="kpi premium-kpi"><span>Delta Vendita netta</span><strong id="deltaNetSales">€0,00</strong></article>
+            <article class="kpi premium-kpi"><span>Delta Utile</span><strong id="deltaProfit">€0,00</strong></article>
+            <article class="kpi premium-kpi"><span>Delta Costi</span><strong id="deltaCosts">€0,00</strong></article>
+          </div>
+        </div>
+
+        <div class="grid two analytics-grid" id="analyticsGrid">
+          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3>Ricavi lordi vs vendita netta</h3></div></div><canvas id="revenueChart" width="640" height="320" aria-label="Revenue chart"></canvas></article>
+          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3>Margine per categoria</h3></div></div><canvas id="categoryMarginChart" width="640" height="320" aria-label="Category margin chart"></canvas></article>
+          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3>Trend utile mensile</h3></div></div><canvas id="profitTrendChart" width="640" height="320" aria-label="Profit trend chart"></canvas></article>
+          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Insight</span><h3>Classifica categorie</h3></div></div><div id="categoryRanking" class="ranking-list"></div></article>
         </div>
       </section>
 
@@ -231,7 +275,7 @@
               <label><span data-i18n="fields.newEmail">Nuova email</span><input id="newEmail" type="email" placeholder="nuova@email.com" /></label>
               <button class="btn primary" id="saveProfile" type="button" data-i18n="settings.saveProfile">Salva profilo</button>
               <button class="btn" id="changeEmail" type="button" data-i18n="settings.changeEmail">Richiedi cambio email</button>
-              <button class="btn ghost" id="resetPassword" type="button" data-i18n="settings.resetPassword">Invia reset password</button>
+              <a class="btn ghost" href="reset-request.html">Recupera / resetta password</a>
               <button class="btn danger" id="logoutBtn" type="button" data-i18n="settings.logout">Esci</button>
             </form>
           </article>

@@ -19,7 +19,7 @@
     </nav>
   </header>
   <main class="auth-page">
-    <section class="auth-card card">
+    <section class="auth-card card auth-spacious">
       <span class="eyebrow" data-i18n="auth.loginEyebrow">Accesso</span>
       <h1 data-i18n="auth.loginTitle">Accedi al tuo database FlipMate</h1>
       <p class="muted" data-i18n="auth.loginText">Entra per gestire stock, vendite, dashboard ed export CSV.</p>
@@ -27,11 +27,13 @@
         <label><span data-i18n="fields.email">Email</span><input id="loginEmail" type="email" autocomplete="email" required /></label>
         <label><span data-i18n="fields.password">Password</span><input id="loginPassword" type="password" autocomplete="current-password" required /></label>
       </form>
-      <div class="actions-row wrap">
+      <div class="auth-link-row">
+        <a class="link-button" href="reset-request.html">Password dimenticata?</a>
+      </div>
+      <div class="actions-row wrap auth-actions-spaced">
         <button class="btn primary" id="loginSubmit" data-i18n="nav.login">Accedi</button>
         <a class="btn ghost" href="signup.html" data-i18n="auth.noAccount">Non hai un account?</a>
       </div>
-      <button class="link-button" id="loginResetPassword" data-i18n="auth.forgotPassword">Password dimenticata?</button>
     </section>
   </main>
   <div id="toast" class="toast hidden"></div>

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Recupera password — FlipMate</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#081426" />
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand-row" href="index.html"><img src="assets/logo.svg" alt="FlipMate logo" /><span>FlipMate</span></a>
+    <nav class="topnav">
+      <a class="btn ghost" href="login.html">Accedi</a>
+      <a class="btn ghost" href="signup.html">Registrati</a>
+      <label class="lang-picker"><span>Lingua</span><select id="rqLang"><option value="it">IT</option><option value="en">EN</option></select></label>
+    </nav>
+  </header>
+  <main class="auth-page">
+    <section class="auth-card card auth-spacious">
+      <span class="eyebrow">Recupero password</span>
+      <h1 id="rqTitle">Invia email di reset</h1>
+      <p class="muted" id="rqText">Inserisci la tua email di registrazione. Per ragioni di sicurezza, il reset effettivo viene inviato solo all'email associata all'account.</p>
+      <form class="form-grid single" id="resetRequestForm">
+        <label><span id="rqFieldLabel">Email o nome utente</span><input id="recoveryIdentifier" type="text" autocomplete="username email" placeholder="nomeutente o email@dominio.com" required /></label>
+        <div id="maskedEmailInfo" class="fineprint hidden"></div>
+      </form>
+      <div class="actions-row wrap auth-actions-spaced">
+        <button class="btn primary" id="sendResetRequest">Invia email reset</button>
+        <a class="btn ghost" href="login.html">Torna all'accesso</a>
+      </div>
+      <p class="fineprint" id="rqNote">Nota: nella versione attuale il flusso sicuro supporta l'invio diretto tramite email. Il recupero tramite solo nome utente richiederebbe un backend dedicato per evitare rischi di enumerazione account.</p>
+    </section>
+  </main>
+  <div id="toast" class="toast hidden"></div>
+  <script src="supabase-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
+  <script>
+    const $=id=>document.getElementById(id);
+    const dict={it:{title:'Invia email di reset',text:"Inserisci la tua email di registrazione. Per ragioni di sicurezza, il reset effettivo viene inviato solo all'email associata all'account.",label:'Email o nome utente',send:'Invia email reset',back:"Torna all'accesso",note:'Nota: nella versione attuale il flusso sicuro supporta l'invio diretto tramite email. Il recupero tramite solo nome utente richiederebbe un backend dedicato per evitare rischi di enumerazione account.',hint:'Se inserisci il nome utente, ti verrà chiesto comunque di usare l'email di registrazione.',missing:'Inserisci email o nome utente.',needEmail:'Per inviare il reset inserisci la tua email di registrazione.',sent:'Se l'email esiste, il link di reset è stato inviato.',config:'Supabase non configurato.'},en:{title:'Send password reset email',text:'Enter your registration email. For security reasons, the actual reset can only be sent to the email linked to the account.',label:'Email or username',send:'Send reset email',back:'Back to log in',note:'Note: the current secure flow supports direct email reset only. Username-only recovery requires a dedicated backend to avoid account enumeration risks.',hint:'If you type a username, you will still be asked to use the registration email.',missing:'Enter email or username.',needEmail:'To send the reset, enter your registration email.',sent:'If the email exists, the reset link has been sent.',config:'Supabase not configured.'}};
+    const lang=localStorage.getItem('flipmate_lang')||'it'; $('rqLang').value=lang; function apply(){const t=dict[$('rqLang').value]; $('rqTitle').textContent=t.title; $('rqText').textContent=t.text; $('rqFieldLabel').textContent=t.label; $('sendResetRequest').textContent=t.send; document.querySelector('a[href="login.html"]').textContent=t.back; $('rqNote').textContent=t.note; document.querySelector('.lang-picker span').textContent=$('rqLang').value==='it'?'Lingua':'Language'; localStorage.setItem('flipmate_lang',$('rqLang').value);} apply(); $('rqLang').addEventListener('change',apply);
+    function toast(msg){const el=$('toast'); el.textContent=msg; el.classList.remove('hidden'); clearTimeout(window.__t); window.__t=setTimeout(()=>el.classList.add('hidden'), 2600);} 
+    document.getElementById('sendResetRequest').addEventListener('click', async()=>{const raw=$('recoveryIdentifier').value.trim(); const t=dict[$('rqLang').value]; if(!raw) return toast(t.missing); if(!raw.includes('@')) { $('maskedEmailInfo').textContent=t.hint; $('maskedEmailInfo').classList.remove('hidden'); return toast(t.needEmail); } if(!window.FLIPMATE_SUPABASE_URL||!window.FLIPMATE_SUPABASE_ANON_KEY||!window.supabase) return toast(t.config); const client=window.supabase.createClient(window.FLIPMATE_SUPABASE_URL, window.FLIPMATE_SUPABASE_ANON_KEY); const redirectTo=location.origin + location.pathname.replace('reset-request.html','reset-password.html'); const {error}=await client.auth.resetPasswordForEmail(raw,{redirectTo}); if(error) return toast(error.message); toast(t.sent); });
+  </script>
+</body>
+</html>
