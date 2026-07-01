@@ -22,7 +22,6 @@
         <button class="btn ghost" data-app-section="calculator">Calcolatore</button>
         <button class="btn ghost" data-app-section="database">Database</button>
         <button class="btn ghost" data-app-section="dashboard">Dashboard</button>
-        <button class="btn ghost" data-app-section="settings">Impostazioni</button>
       </div>
       <label class="lang-picker compact-lang"><span data-i18n="common.lang">Lingua</span><select id="languageSelect"><option value="it">IT</option><option value="en">EN</option></select></label>
       <label class="app-mobile-nav hidden-desktop"><span>Vai a</span>
@@ -31,10 +30,15 @@
           <option value="calculator">Calcolatore</option>
           <option value="database">Database</option>
           <option value="dashboard">Dashboard</option>
-          <option value="settings">Impostazioni</option>
         </select>
       </label>
-      <button class="btn primary" id="accountButton">Account</button>
+      <div class="account-menu-wrap">
+        <button class="btn primary" id="accountButton" aria-expanded="false">Account</button>
+        <div class="account-menu hidden" id="accountMenu">
+          <button class="account-menu-item" data-app-section="settings">Impostazioni</button>
+          <button class="account-menu-item danger-text" id="accountLogoutBtn">Logout</button>
+        </div>
+      </div>
     </nav>
   </header>
 
@@ -59,18 +63,18 @@
       </div>
 
       <div class="global-kpis kpi-grid compact-kpis" aria-label="Global KPIs">
-        <article class="kpi"><span>YTD · <span data-i18n="kpi.stockPieces">Pezzi in stock</span></span><strong data-kpi="stockPieces">0</strong></article>
-        <article class="kpi"><span>YTD · <span data-i18n="kpi.costs">Costi sostenuti</span></span><strong data-kpi="costs">€0,00</strong></article>
-        <article class="kpi"><span>YTD · <span data-i18n="kpi.probableSales">Vendita probabile</span></span><strong data-kpi="probableSales">€0,00</strong></article>
-        <article class="kpi"><span>YTD · <span data-i18n="kpi.netSales">Vendita netta</span></span><strong data-kpi="netSales">€0,00</strong></article>
-        <article class="kpi"><span>YTD · <span data-i18n="kpi.profit">Utile</span></span><strong data-kpi="profit">€0,00</strong></article>
+        <article class="kpi"><span>Pezzi in stock</span><strong data-kpi="stockPieces">0</strong></article>
+        <article class="kpi"><span>Capitale investito</span><strong data-kpi="costs">€0,00</strong></article>
+        <article class="kpi"><span>Valore stock stimato</span><strong data-kpi="probableSales">€0,00</strong></article>
+        <article class="kpi"><span>Utile potenziale</span><strong data-kpi="netSales">€0,00</strong></article>
+        <article class="kpi"><span>Utile realizzato anno</span><strong data-kpi="profit">€0,00</strong></article>
       </div>
 
       <section id="homeSection" class="app-section">
         <div class="section-heading left app-section-heading">
           <span class="eyebrow">Home</span>
           <h2>Panoramica rapida</h2>
-          <p>Qui vedi un riepilogo rapido. Le KPI in alto sono YTD; i dettagli avanzati e i confronti sono nella Dashboard.</p>
+          <p>Qui vedi un riepilogo rapido dell’anno corrente. I dettagli avanzati e i confronti sono nella Dashboard.</p>
         </div>
         <div class="grid two home-split-grid">
           <article class="card">
@@ -82,11 +86,11 @@
             </div>
           </article>
           <article class="card">
-            <h3>Note KPI</h3>
+            <h3>Focus operativo</h3>
             <ul class="clean-list compact-list">
-              <li>Le KPI globali restano visibili in tutte le sezioni.</li>
-              <li>I costi sostenuti non si azzerano quando un articolo passa a “Venduto”.</li>
-              <li>Dashboard = MTD, YTD, selezione periodo e confronto Delta.</li>
+              <li>Controlla quanto capitale hai impegnato nello stock.</li>
+              <li>Verifica il valore stimato degli articoli ancora da vendere.</li>
+              <li>Apri la dashboard per analizzare margini, trend e categorie.</li>
             </ul>
           </article>
         </div>
@@ -97,7 +101,7 @@
           <article class="card">
             <div class="card-header">
               <div><span class="eyebrow" data-i18n="app.navCalculator">Calcolatore</span><h3 data-i18n="calc.title">Analisi prodotto</h3></div>
-              <button class="btn small" id="resetCalculator" data-i18n="common.reset">Reset</button>
+              <div class="actions-row compact"><button class="btn small" id="refreshFeePresets">Aggiorna preset</button><button class="btn small" id="resetCalculator" data-i18n="common.reset">Reset</button></div>
             </div>
             <form id="calculatorForm" class="form-grid">
               <label><span data-i18n="fields.analysisMode">Modalità analisi</span>
@@ -216,7 +220,7 @@
         <div class="section-heading left app-section-heading">
           <span class="eyebrow">Dashboard</span>
           <h2>Analytics approfondite</h2>
-          <p>Seleziona anno, mese e confronto per leggere KPI MTD, YTD e Delta. I grafici possono essere mostrati in coppia o singolarmente.</p>
+          <p>Seleziona anno, mese e confronto per leggere KPI di anno, mese, periodo selezionato e delta. I grafici possono essere mostrati in coppia o singolarmente.</p>
         </div>
         <article class="card dashboard-filter-card">
           <div class="form-grid filters-grid dashboard-control-grid">
@@ -229,16 +233,16 @@
         </article>
 
         <div class="dashboard-block">
-          <h3>MTD / YTD</h3>
+          <h3>Anno / Mese</h3>
           <div class="kpi-grid dashboard-kpis dashboard-summary-grid">
-            <article class="kpi"><span>YTD Ricavi lordi</span><strong id="ytdGrossRevenue">€0,00</strong></article>
-            <article class="kpi"><span>YTD Vendita netta</span><strong id="ytdNetSales">€0,00</strong></article>
-            <article class="kpi"><span>YTD Utile</span><strong id="ytdProfit">€0,00</strong></article>
-            <article class="kpi"><span>YTD Costi sostenuti</span><strong id="ytdCosts">€0,00</strong></article>
-            <article class="kpi"><span>MTD Ricavi lordi</span><strong id="mtdGrossRevenue">€0,00</strong></article>
-            <article class="kpi"><span>MTD Vendita netta</span><strong id="mtdNetSales">€0,00</strong></article>
-            <article class="kpi"><span>MTD Utile</span><strong id="mtdProfit">€0,00</strong></article>
-            <article class="kpi"><span>MTD Costi sostenuti</span><strong id="mtdCosts">€0,00</strong></article>
+            <article class="kpi"><span>Anno Ricavi lordi</span><strong id="ytdGrossRevenue">€0,00</strong></article>
+            <article class="kpi"><span>Anno Vendita netta</span><strong id="ytdNetSales">€0,00</strong></article>
+            <article class="kpi"><span>Anno Utile realizzato</span><strong id="ytdProfit">€0,00</strong></article>
+            <article class="kpi"><span>Anno Capitale investito</span><strong id="ytdCosts">€0,00</strong></article>
+            <article class="kpi"><span>Mese Ricavi lordi</span><strong id="mtdGrossRevenue">€0,00</strong></article>
+            <article class="kpi"><span>Mese Vendita netta</span><strong id="mtdNetSales">€0,00</strong></article>
+            <article class="kpi"><span>Mese Utile realizzato</span><strong id="mtdProfit">€0,00</strong></article>
+            <article class="kpi"><span>Mese Capitale investito</span><strong id="mtdCosts">€0,00</strong></article>
           </div>
         </div>
 
@@ -248,17 +252,22 @@
             <article class="kpi premium-kpi"><span>Periodo Ricavi lordi</span><strong id="selectedGrossRevenue">€0,00</strong></article>
             <article class="kpi premium-kpi"><span>Periodo Vendita netta</span><strong id="selectedNetSales">€0,00</strong></article>
             <article class="kpi premium-kpi"><span>Periodo Utile</span><strong id="selectedProfit">€0,00</strong></article>
-            <article class="kpi premium-kpi"><span>Periodo Costi</span><strong id="selectedCosts">€0,00</strong></article>
+            <article class="kpi premium-kpi"><span>Periodo Capitale investito</span><strong id="selectedCosts">€0,00</strong></article>
             <article class="kpi premium-kpi"><span>Delta Ricavi lordi</span><strong id="deltaGrossRevenue">€0,00</strong></article>
             <article class="kpi premium-kpi"><span>Delta Vendita netta</span><strong id="deltaNetSales">€0,00</strong></article>
             <article class="kpi premium-kpi"><span>Delta Utile</span><strong id="deltaProfit">€0,00</strong></article>
-            <article class="kpi premium-kpi"><span>Delta Costi</span><strong id="deltaCosts">€0,00</strong></article>
+            <article class="kpi premium-kpi"><span>Delta Capitale investito</span><strong id="deltaCosts">€0,00</strong></article>
+            <article class="kpi premium-kpi"><span>Ticket medio</span><strong id="avgTicket">€0,00</strong></article>
+            <article class="kpi premium-kpi"><span>Margine medio %</span><strong id="avgMarginPct">0%</strong></article>
+            <article class="kpi premium-kpi"><span>Utile medio/prodotto</span><strong id="avgProfitPerItem">€0,00</strong></article>
+            <article class="kpi premium-kpi"><span>Stock fermo 45gg</span><strong id="staleStockCount">0</strong></article>
           </div>
         </div>
 
         <div class="grid two analytics-grid" id="analyticsGrid">
           <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3>Ricavi lordi vs vendita netta</h3></div></div><canvas id="revenueChart" width="640" height="320" aria-label="Revenue chart"></canvas></article>
           <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3>Margine per categoria</h3></div></div><canvas id="categoryMarginChart" width="640" height="320" aria-label="Category margin chart"></canvas></article>
+          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3>Composizione stock</h3></div></div><canvas id="stockStatusPieChart" width="640" height="320" aria-label="Stock status pie chart"></canvas></article>
           <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3>Trend utile mensile</h3></div></div><canvas id="profitTrendChart" width="640" height="320" aria-label="Profit trend chart"></canvas></article>
           <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Insight</span><h3>Classifica categorie</h3></div></div><div id="categoryRanking" class="ranking-list"></div></article>
         </div>
