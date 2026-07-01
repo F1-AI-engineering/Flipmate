@@ -64,6 +64,9 @@
   function modeLabel(mode) { return I18N[lang].modes[mode] || mode || I18N[lang].modes.vinted_ebay; }
   function statusLabel(status) { return I18N[lang].status[status] || status || I18N[lang].status.watchlist; }
   function setTextAll(selector, text) { document.querySelectorAll(selector).forEach(el => el.textContent = text); }
+  function setMoneyAll(selector, value) { document.querySelectorAll(selector).forEach(el => { const n = +value || 0; el.textContent = fmt(n); el.classList.toggle('negative', n < 0); }); }
+  function setNumericClass(el, value) { if (el) el.classList.toggle('negative', (+value || 0) < 0); }
+  function daysOld(row) { return Math.floor((Date.now() - rowCreatedDate(row).getTime()) / 86400000); }
 
   function buildSelectOptions() {
     document.querySelectorAll('[data-category-select]').forEach(select => {
@@ -142,10 +145,39 @@
     $('startFreeTrial2')?.addEventListener('click', start);
   }
 
-  let supabase = null, session = null, profile = null, dbCache = [], filteredDbCache = [];
+  let supabase = null, session = null, profile = null, dbCache = [], filteredDbCache = [], feePresets = null;
   function ensureSupabase() { const url = window.FLIPMATE_SUPABASE_URL; const key = window.FLIPMATE_SUPABASE_ANON_KEY; if (!url || !key || !window.supabase) return null; return window.supabase.createClient(url, key); }
   function getPendingCalc() { try { return JSON.parse(sessionStorage.getItem('flipmate_pending_calc') || 'null'); } catch { return null; } }
   function fillFormFromPayload(p) { if (!p) return; const map = {analysisMode:p.mode, productName:p.productName, category:p.category, purchasePrice:p.purchasePrice, purchaseShipping:p.purchaseShipping, salePrice:p.salePrice, realShipping:p.realShipping, packCost:p.packCost, buyerShipping:p.buyerShipping, ebayFeePct:p.ebayFeePct, regPct:p.regPct, ebayFixed:p.ebayFixed, vintedPct:p.vintedPct, vintedFixed:p.vintedFixed}; Object.entries(map).forEach(([id,v])=>{ if ($(id) && v !== undefined && v !== null) $(id).value = v; }); if ($('status')) $('status').value='in_stock'; }
+
+
+  async function loadMarketplacePresets(showToast=false, forceApply=false) {
+    try {
+      const res = await fetch('config/marketplace-fees.json', { cache: 'no-store' });
+      if (!res.ok) throw new Error('config not found');
+      feePresets = await res.json();
+      if (forceApply) applyMarketplacePresets(true);
+      if (showToast) toast(lang === 'it' ? 'Preset commissioni aggiornati.' : 'Fee presets updated.');
+    } catch (err) {
+      if (showToast) toast(lang === 'it' ? 'Preset non disponibili. Uso i valori correnti.' : 'Presets unavailable. Current values kept.');
+    }
+  }
+
+  function applyMarketplacePresets(force=false) {
+    if (!feePresets || !$('analysisMode')) return;
+    const mode = val('analysisMode') || 'vinted_ebay';
+    const v = feePresets.vinted || {};
+    const e = feePresets.ebay_private_it || {};
+    const set = (id, value) => { if ($(id) && (force || $(id).value === '' || $(id).dataset.autofee === '1')) { $(id).value = value ?? 0; $(id).dataset.autofee = '1'; } };
+    if (mode === 'vinted') {
+      set('vintedPct', 0); set('vintedFixed', 0); set('ebayFeePct', 0); set('regPct', 0); set('ebayFixed', 0); set('buyerShipping', 0); set('realShipping', v.average_real_shipping ?? 0); set('packCost', v.average_packaging_cost ?? 0.6);
+    } else if (mode === 'ebay') {
+      set('vintedPct', 0); set('vintedFixed', 0); set('ebayFeePct', e.final_value_fee_pct ?? 5); set('regPct', e.regulatory_fee_pct ?? 0.43); set('ebayFixed', e.fixed_fee ?? 0.35); set('buyerShipping', e.buyer_shipping_default ?? 6.5); set('realShipping', e.average_real_shipping ?? 5.2); set('packCost', e.average_packaging_cost ?? 0.8);
+    } else {
+      set('vintedPct', v.buyer_protection_pct ?? 5); set('vintedFixed', v.buyer_protection_fixed ?? 0.70); set('ebayFeePct', e.final_value_fee_pct ?? 5); set('regPct', e.regulatory_fee_pct ?? 0.43); set('ebayFixed', e.fixed_fee ?? 0.35); set('buyerShipping', e.buyer_shipping_default ?? 6.5); set('realShipping', e.average_real_shipping ?? 5.2); set('packCost', e.average_packaging_cost ?? 0.8);
+    }
+    renderCalculation();
+  }
 
   async function authPageInit(kind) {
     supabase = ensureSupabase();
@@ -185,6 +217,7 @@
   async function appInit() {
     supabase = ensureSupabase();
     if (!supabase) return toast(t('messages.supabaseMissing'));
+    await loadMarketplacePresets(false, true);
     bindAppEvents();
     const { data } = await supabase.auth.getSession();
     session = data.session;
@@ -236,7 +269,7 @@
 
   function currentInput() { return { mode: val('analysisMode'), productName: val('productName'), category: val('category'), status: val('status'), purchasePrice: num('purchasePrice'), purchaseShipping: num('purchaseShipping'), vintedPct: num('vintedPct'), vintedFixed: num('vintedFixed'), salePrice: num('salePrice'), buyerShipping: num('buyerShipping'), realShipping: num('realShipping'), packCost: num('packCost'), ebayFeePct: num('ebayFeePct'), regPct: num('regPct'), ebayFixed: num('ebayFixed'), notes: val('notes') }; }
   function renderCalculation() { if (!$('decision')) return null; const input = currentInput(); const out = calculate(input); $('decision').textContent = out.decision; $('decisionReason').textContent = out.reason; $('outAllIn').textContent=fmt(out.allIn); $('outFair').textContent=fmt(out.fair); $('outListing').textContent=fmt(out.listing); $('outMinOffer').textContent=fmt(out.minOffer); $('outBreakEven').textContent=fmt(out.breakEven); $('outMaxBuy').textContent=fmt(out.maxBuy); $('outProfit').textContent=fmt(out.profit); $('outRoi').textContent=pct(out.roi); return { input, out }; }
-  function applyModeFields() { const mode = val('analysisMode') || 'vinted_ebay'; document.querySelectorAll('[data-mode-field="ebaySell"]').forEach(el => el.classList.toggle('hidden', mode === 'vinted')); document.querySelectorAll('[data-mode-field="vintedBuy"]').forEach(el => el.classList.toggle('hidden', mode !== 'vinted_ebay')); if (mode==='vinted') ['buyerShipping','ebayFeePct','regPct','ebayFixed','vintedPct','vintedFixed'].forEach(id=>{ if($(id)) $(id).value=0; }); if (mode==='ebay') ['vintedPct','vintedFixed'].forEach(id=>{ if($(id)) $(id).value=0; }); renderCalculation(); }
+  function applyModeFields() { const mode = val('analysisMode') || 'vinted_ebay'; document.querySelectorAll('[data-mode-field="ebaySell"]').forEach(el => el.classList.toggle('hidden', mode === 'vinted')); document.querySelectorAll('[data-mode-field="vintedBuy"]').forEach(el => el.classList.toggle('hidden', mode !== 'vinted_ebay')); applyMarketplacePresets(false); if (mode==='vinted') ['buyerShipping','ebayFeePct','regPct','ebayFixed','vintedPct','vintedFixed'].forEach(id=>{ if($(id)) $(id).value=0; }); if (mode==='ebay') ['vintedPct','vintedFixed'].forEach(id=>{ if($(id)) $(id).value=0; }); renderCalculation(); }
 
   async function saveProduct() {
     if (!session) return location.href='login.html';
@@ -258,14 +291,27 @@
   function rowEventDate(row) { return new Date(row.sale_date || row.created_at || Date.now()); }
   function inYearMonth(date, year, month) { const y = Number(year), m = month === 'all' ? 'all' : Number(month); if (!y || Number.isNaN(y)) return true; if (date.getFullYear() !== y) return false; if (m === 'all' || !m) return true; return date.getMonth() + 1 === m; }
   function aggregateMetrics(rows) {
+    const stockRows = rows.filter(x => ['in_stock','listed'].includes(x.status));
     const soldRows = rows.filter(x => x.status === 'sold');
+    const costs = rows.reduce((a,b)=>a+(+b.all_in_cost || +b.purchase_price || 0),0);
+    const stockValue = stockRows.reduce((a,b)=>a+productSaleValue(b),0);
+    const potentialProfit = stockRows.reduce((a,b)=>a+(+b.profit || 0),0);
+    const realizedProfit = soldRows.reduce((a,b)=>a+(+b.profit || 0),0);
+    const grossRevenue = soldRows.reduce((a,b)=>a+productSaleValue(b),0);
+    const netSales = soldRows.reduce((a,b)=>a+netSaleValue(b),0);
     return {
-      stockPieces: rows.filter(x => ['in_stock','listed'].includes(x.status)).length,
-      costs: rows.reduce((a,b)=>a+(+b.all_in_cost || +b.purchase_price || 0),0),
-      probableSales: rows.filter(x => ['in_stock','listed'].includes(x.status)).reduce((a,b)=>a+productSaleValue(b),0),
-      netSales: soldRows.reduce((a,b)=>a+netSaleValue(b),0),
-      profit: rows.reduce((a,b)=>a+(+b.profit || 0),0),
-      grossRevenue: soldRows.reduce((a,b)=>a+productSaleValue(b),0)
+      stockPieces: stockRows.length,
+      costs,
+      probableSales: stockValue,
+      potentialProfit,
+      netSales,
+      profit: realizedProfit,
+      grossRevenue,
+      soldCount: soldRows.length,
+      avgTicket: soldRows.length ? grossRevenue / soldRows.length : 0,
+      avgMarginPct: grossRevenue ? realizedProfit / grossRevenue * 100 : 0,
+      avgProfitPerItem: soldRows.length ? realizedProfit / soldRows.length : 0,
+      staleStockCount: stockRows.filter(r => daysOld(r) >= ((feePresets?.defaults?.stale_stock_days) || 45)).length
     };
   }
   function currentYearRows() { const year = new Date().getFullYear(); return dbCache.filter(row => rowCreatedDate(row).getFullYear() === year); }
@@ -305,7 +351,7 @@
     const month = $(monthId)?.value || 'all';
     return dbCache.filter(row => inYearMonth(rowCreatedDate(row), year, month));
   }
-  function setMaybe(id, value, formatter=fmt) { if ($(id)) $(id).textContent = formatter(value); }
+  function setMaybe(id, value, formatter=fmt) { if ($(id)) { $(id).textContent = formatter(value); setNumericClass($(id), value); } }
 
   function applyFilters() {
     if (!$('dbRows')) return;
@@ -338,11 +384,11 @@
     const metrics = aggregateMetrics(ytdRows);
     const top = topCategoryByMargin(ytdRows);
     setTextAll('[data-kpi="stockPieces"]', metrics.stockPieces);
-    setTextAll('[data-kpi="costs"]', fmt(metrics.costs));
-    setTextAll('[data-kpi="probableSales"]', fmt(metrics.probableSales));
-    setTextAll('[data-kpi="netSales"]', fmt(metrics.netSales));
-    setTextAll('[data-kpi="profit"]', fmt(metrics.profit));
-    setTextAll('[data-kpi="grossRevenue"]', fmt(metrics.grossRevenue));
+    setMoneyAll('[data-kpi="costs"]', metrics.costs);
+    setMoneyAll('[data-kpi="probableSales"]', metrics.probableSales);
+    setMoneyAll('[data-kpi="netSales"]', metrics.potentialProfit);
+    setMoneyAll('[data-kpi="profit"]', metrics.profit);
+    setMoneyAll('[data-kpi="grossRevenue"]', metrics.grossRevenue);
     setTextAll('[data-kpi="topCategory"]', top?.category ? categoryLabel(top.category) : '—');
     const soldYtd = ytdRows.filter(x => x.status === 'sold');
     const sellThrough = ytdRows.length ? soldYtd.length / ytdRows.length * 100 : 0;
@@ -373,8 +419,20 @@
   }
   function chartClear(canvas) { const ctx=canvas?.getContext('2d'); if(!canvas||!ctx)return null; ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle='#617086'; ctx.font='13px system-ui,-apple-system,Segoe UI,sans-serif'; return ctx; }
   function drawNoData(canvasId,text=t('messages.noData')) { const canvas=$(canvasId), ctx=chartClear(canvas); if(!ctx)return; ctx.fillText(text,24,44); }
-  function drawBarChart(canvasId,data,formatter=fmt) { const canvas=$(canvasId), ctx=chartClear(canvas); if(!ctx)return; if(!data.length||data.every(d=>!d.value))return drawNoData(canvasId); const w=canvas.width,h=canvas.height,pad=46,max=Math.max(...data.map(d=>Math.abs(d.value)),1),barW=Math.max(28,(w-pad*2)/data.length*.58); data.forEach((d,i)=>{ const x=pad+i*((w-pad*2)/data.length)+barW*.25,bh=Math.max(4,Math.abs(d.value)/max*(h-pad*2)),y=h-pad-bh; const grad=ctx.createLinearGradient(0,y,0,h-pad); grad.addColorStop(0,'#0bbf8a'); grad.addColorStop(1,'#247cff'); ctx.fillStyle=grad; ctx.fillRect(x,y,barW,bh); ctx.fillStyle='#132033'; ctx.fillText(formatter(d.value),x,Math.max(18,y-8)); ctx.fillStyle='#617086'; ctx.fillText(String(d.label).slice(0,14),x,h-18); }); }
+  function drawBarChart(canvasId,data,formatter=fmt) { const canvas=$(canvasId), ctx=chartClear(canvas); if(!ctx)return; if(!data.length||data.every(d=>!d.value))return drawNoData(canvasId); const w=canvas.width,h=canvas.height,pad=46,max=Math.max(...data.map(d=>Math.abs(d.value)),1),barW=Math.max(28,(w-pad*2)/data.length*.58); data.forEach((d,i)=>{ const x=pad+i*((w-pad*2)/data.length)+barW*.25,bh=Math.max(4,Math.abs(d.value)/max*(h-pad*2)),y=h-pad-bh; if (d.value < 0) { ctx.fillStyle = '#dc315c'; } else { const grad=ctx.createLinearGradient(0,y,0,h-pad); grad.addColorStop(0,'#0bbf8a'); grad.addColorStop(1,'#247cff'); ctx.fillStyle=grad; } ctx.fillRect(x,y,barW,bh); ctx.fillStyle='#132033'; ctx.fillText(formatter(d.value),x,Math.max(18,y-8)); ctx.fillStyle='#617086'; ctx.fillText(String(d.label).slice(0,14),x,h-18); }); }
   function drawLineChart(canvasId,data) { const canvas=$(canvasId),ctx=chartClear(canvas); if(!ctx)return; if(data.length<2)return drawNoData(canvasId,t('messages.trendNeed')); const w=canvas.width,h=canvas.height,pad=46,max=Math.max(...data.map(d=>d.value),1),min=Math.min(...data.map(d=>d.value),0),range=Math.max(max-min,1); const point=(d,i)=>({x:pad+i*((w-pad*2)/(data.length-1)), y:h-pad-((d.value-min)/range)*(h-pad*2)}); ctx.strokeStyle='#0bbf8a'; ctx.lineWidth=3; ctx.beginPath(); data.forEach((d,i)=>{const p=point(d,i); if(i===0)ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);}); ctx.stroke(); data.forEach((d,i)=>{const p=point(d,i); ctx.fillStyle='#247cff'; ctx.beginPath(); ctx.arc(p.x,p.y,5,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#617086'; ctx.fillText(d.label,p.x-18,h-18); ctx.fillStyle='#132033'; ctx.fillText(fmt(d.value),p.x-22,p.y-12);}); }
+
+  function drawPieChart(canvasId, data) {
+    const canvas=$(canvasId), ctx=chartClear(canvas); if(!ctx)return;
+    const total = data.reduce((a,b)=>a+(+b.value||0),0);
+    if(!total) return drawNoData(canvasId);
+    const cx = canvas.width * 0.34, cy = canvas.height * 0.52, r = Math.min(canvas.width, canvas.height) * 0.28;
+    const colors = ['#0bbf8a','#247cff','#f6a623','#dc315c','#6b7cff'];
+    let angle = -Math.PI/2;
+    data.forEach((d,i)=>{ const slice = (d.value/total)*Math.PI*2; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,angle,angle+slice); ctx.closePath(); ctx.fillStyle=colors[i%colors.length]; ctx.fill(); angle += slice; });
+    let y = 50; data.forEach((d,i)=>{ ctx.fillStyle=colors[i%colors.length]; ctx.fillRect(canvas.width*0.62, y-10, 12, 12); ctx.fillStyle='#132033'; ctx.fillText(`${d.label}: ${d.value}`, canvas.width*0.62+20, y); y += 28; });
+  }
+
   function renderAnalytics() {
     if(!$('revenueChart'))return;
     updateChartLayout();
@@ -388,12 +446,15 @@
     setMaybe('mtdGrossRevenue', mtd.grossRevenue); setMaybe('mtdNetSales', mtd.netSales); setMaybe('mtdProfit', mtd.profit); setMaybe('mtdCosts', mtd.costs);
     setMaybe('selectedGrossRevenue', selected.grossRevenue); setMaybe('selectedNetSales', selected.netSales); setMaybe('selectedProfit', selected.profit); setMaybe('selectedCosts', selected.costs);
     setMaybe('deltaGrossRevenue', selected.grossRevenue - compare.grossRevenue); setMaybe('deltaNetSales', selected.netSales - compare.netSales); setMaybe('deltaProfit', selected.profit - compare.profit); setMaybe('deltaCosts', selected.costs - compare.costs);
+    setMaybe('avgTicket', selected.avgTicket); setMaybe('avgMarginPct', selected.avgMarginPct, pct); setMaybe('avgProfitPerItem', selected.avgProfitPerItem); if ($('staleStockCount')) $('staleStockCount').textContent = selected.staleStockCount;
     const revBars = [{label: lang==='it'?'Periodo lordo':'Selected gross', value:selected.grossRevenue},{label: lang==='it'?'Periodo netto':'Selected net', value:selected.netSales}];
     if (compareRows.length) { revBars.push({label: lang==='it'?'Confr. lordo':'Compare gross', value:compare.grossRevenue},{label: lang==='it'?'Confr. netto':'Compare net', value:compare.netSales}); }
     drawBarChart('revenueChart', revBars);
     const categories=new Map(); selectedRows.forEach(row=>{const cat=categoryKey(row.category), curr=categories.get(cat)||{label:categoryLabel(cat),value:0,count:0,revenue:0}; curr.value += +row.profit || 0; curr.revenue += productSaleValue(row); curr.count += 1; categories.set(cat,curr);});
     const catData=[...categories.values()].sort((a,b)=>b.value-a.value).slice(0,6);
     drawBarChart('categoryMarginChart',catData);
+    const statusData = ['in_stock','listed','sold','archived'].map(k => ({ label: statusLabel(k), value: selectedRows.filter(r => r.status === k).length })).filter(x=>x.value);
+    drawPieChart('stockStatusPieChart', statusData);
     renderCategoryRanking(catData);
     const trendYear = $('dashboardYear')?.value || String(new Date().getFullYear());
     const monthly=new Map(); dbCache.filter(r => rowCreatedDate(r).getFullYear() === Number(trendYear)).forEach(row=>{const dt=rowCreatedDate(row), key=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; monthly.set(key,(monthly.get(key)||0)+(+row.profit||0));});
@@ -408,10 +469,13 @@
   function resetCalculator() { ['productName','purchasePrice','purchaseShipping','salePrice','buyerShipping','realShipping','packCost','notes'].forEach(id=>{ if($(id)) $(id).value = id==='productName' ? '' : ''; }); if($('status')) $('status').value='watchlist'; renderCalculation(); }
 
   function bindAppEvents() {
-    $('logoutBtn')?.addEventListener('click', async()=>{ await supabase.auth.signOut(); toast(t('messages.logout')); location.href='login.html'; });
+    const doLogout = async()=>{ await supabase.auth.signOut(); toast(t('messages.logout')); location.href='login.html'; };
+    $('logoutBtn')?.addEventListener('click', doLogout); $('accountLogoutBtn')?.addEventListener('click', doLogout);
+    $('accountButton')?.addEventListener('click', (e)=>{ e.stopPropagation(); $('accountMenu')?.classList.toggle('hidden'); }); document.addEventListener('click',()=> $('accountMenu')?.classList.add('hidden'));
+    $('refreshFeePresets')?.addEventListener('click', async()=>{ await loadMarketplacePresets(true, true); });
     $('saveToDb')?.addEventListener('click', saveProduct); $('refreshDb')?.addEventListener('click', loadDb); $('exportDbCsv')?.addEventListener('click', exportDbCsv); $('exportSingleCsv')?.addEventListener('click', exportCurrentCsv); $('bulkUpdateStatus')?.addEventListener('click', bulkUpdateStatus);
     $('copySummary')?.addEventListener('click', async()=>{ const c=renderCalculation(); if(!c)return; await navigator.clipboard.writeText(`${c.input.productName}: ${c.out.decision}, ${t('kpi.profit')} ${fmt(c.out.profit)}, ROI ${pct(c.out.roi)}`); toast(t('messages.copied')); });
-    $('analysisMode')?.addEventListener('change', applyModeFields); $('savePurpose')?.addEventListener('click', saveProfileSettings); $('saveProfile')?.addEventListener('click', saveProfileSettings); $('changeEmail')?.addEventListener('click', changeEmail); $('resetPassword')?.addEventListener('click', resetPassword); $('accountButton')?.addEventListener('click', ()=>showSection('settings')); $('resetCalculator')?.addEventListener('click', resetCalculator); $('applyFilters')?.addEventListener('click', applyFilters); $('resetFilters')?.addEventListener('click', resetFilters);
+    $('analysisMode')?.addEventListener('change', applyModeFields); $('savePurpose')?.addEventListener('click', saveProfileSettings); $('saveProfile')?.addEventListener('click', saveProfileSettings); $('changeEmail')?.addEventListener('click', changeEmail); $('resetPassword')?.addEventListener('click', resetPassword); $('resetCalculator')?.addEventListener('click', resetCalculator); $('applyFilters')?.addEventListener('click', applyFilters); $('resetFilters')?.addEventListener('click', resetFilters);
     ['filterMode','filterCategory','filterStatus','filterSaleMin','filterSaleMax','filterProfitMin','filterProfitMax','filterCostMin','filterCostMax'].forEach(id=>{ $(id)?.addEventListener('input',applyFilters); $(id)?.addEventListener('change',applyFilters); });
     document.querySelectorAll('[data-app-section]').forEach(btn=>btn.addEventListener('click',()=>showSection(btn.dataset.appSection)));
     $('appSectionMobileSelect')?.addEventListener('change', e => showSection(e.target.value));

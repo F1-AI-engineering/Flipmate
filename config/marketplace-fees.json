@@ -1,0 +1,25 @@
+{
+  "version": "2026-07-01",
+  "currency": "EUR",
+  "source_note": "Preset modificabili: aggiornare questo file per distribuire nuovi default a tutti gli utenti al refresh.",
+  "vinted": {
+    "buyer_protection_pct": 5,
+    "buyer_protection_fixed": 0.70,
+    "seller_fee_pct": 0,
+    "average_packaging_cost": 0.60,
+    "average_real_shipping": 0
+  },
+  "ebay_private_it": {
+    "final_value_fee_pct": 5,
+    "regulatory_fee_pct": 0.43,
+    "fixed_fee": 0.35,
+    "average_packaging_cost": 0.80,
+    "average_real_shipping": 5.20,
+    "buyer_shipping_default": 6.50
+  },
+  "defaults": {
+    "target_roi_pct": 25,
+    "min_profit_eur": 10,
+    "stale_stock_days": 45
+  }
+}
