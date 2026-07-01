@@ -1,47 +1,42 @@
-# FlipMate V9
+# FlipMate V10
 
-Web app statica GitHub Pages + Supabase per calcolare margini, gestire stock e leggere analytics per reselling Vinted/eBay.
+Versione V10 del prototipo FlipMate.
 
-## Novità V9
+## Novità principali
 
-- Home ripulita da note interne.
-- KPI top rinominati con gergo comune:
-  - Pezzi in stock
-  - Capitale investito
-  - Valore stock stimato
-  - Utile potenziale
-  - Utile realizzato anno
-- Dashboard con Anno / Mese / Periodo / Confronto e Delta.
-- Preset commissioni e costi medi aggiornabili da `config/marketplace-fees.json`.
-- Grafici aggiunti:
-  - barre ricavi lordi vs vendite nette
-  - barre margine per categoria
-  - torta composizione stock
-  - linea trend utile mensile con indicatori
-- Numeri negativi in rosso.
-- Impostazioni spostate nel menu utente.
-- Navigazione mobile migliorata con menu a tendina.
-- Funzioni sbloccate lato UI per test completo.
-
-## Configurazione commissioni
-
-Modifica `config/marketplace-fees.json` per aggiornare i default distribuiti agli utenti al refresh.
-
-## Deploy
-
-1. Carica tutto nella root del repository GitHub Pages.
-2. Non sovrascrivere `supabase-config.js` già configurato.
-3. Verifica che siano presenti:
-   - `index.html`
-   - `login.html`
-   - `signup.html`
-   - `reset-request.html`
-   - `reset-password.html`
-   - `app.html`
-   - `app.js`
-   - `styles.css`
-   - `config/marketplace-fees.json`
+- Grafici dashboard rivisti: barre con griglia, torta con legenda, linea con indicatori e card più leggibili.
+- Delta confronto nascosto di default: l'utente lo abilita con l'interruttore "Mostra Delta confronto".
+- Database con selezione multipla tramite checkbox riga per riga.
+- Checkbox in intestazione per selezionare tutte le righe filtrate.
+- Aggiornamento massivo solo dei prodotti selezionati.
+- Se lo stato passa a "Venduto", viene aperto un popup obbligatorio per inserire il prezzo reale di vendita.
+- Nel popup vendita si vedono data, descrizione, categoria, costo, prezzo vecchio, prezzo nuovo e utile nuovo aggiornato live.
+- Aggiornamento singolo riga mantenuto.
 
 ## Supabase
 
-Nessuna nuova migrazione obbligatoria rispetto alla V7/V8 funzionante.
+Non sono richieste nuove migrazioni se arrivi da V9 funzionante.
+
+Campi usati:
+
+- `status`
+- `sale_price`
+- `sale_date`
+- `profit`
+- `roi`
+
+## Caricamento GitHub
+
+1. Estrai lo ZIP.
+2. Carica/sovrascrivi i file nel repository.
+3. Non sovrascrivere `supabase-config.js` se contiene già URL e chiave pubblica.
+4. Commit consigliato: `FlipMate V10 dashboard and bulk sales update`.
+
+## Test consigliati
+
+1. Dashboard: Delta nascosto di default.
+2. Attiva Delta: compaiono anno/mese confronto e KPI Delta.
+3. Database: seleziona solo alcune righe e aggiorna stato non-venduto.
+4. Database: seleziona righe e imposta Venduto.
+5. Popup vendita: modifica prezzi e verifica utile live.
+6. Conferma: controlla su Supabase che `sale_price`, `sale_date`, `profit`, `roi` siano aggiornati.

@@ -145,7 +145,7 @@
     $('startFreeTrial2')?.addEventListener('click', start);
   }
 
-  let supabase = null, session = null, profile = null, dbCache = [], filteredDbCache = [], feePresets = null;
+  let supabase = null, session = null, profile = null, dbCache = [], filteredDbCache = [], feePresets = null, saleUpdateQueue = [];
   function ensureSupabase() { const url = window.FLIPMATE_SUPABASE_URL; const key = window.FLIPMATE_SUPABASE_ANON_KEY; if (!url || !key || !window.supabase) return null; return window.supabase.createClient(url, key); }
   function getPendingCalc() { try { return JSON.parse(sessionStorage.getItem('flipmate_pending_calc') || 'null'); } catch { return null; } }
   function fillFormFromPayload(p) { if (!p) return; const map = {analysisMode:p.mode, productName:p.productName, category:p.category, purchasePrice:p.purchasePrice, purchaseShipping:p.purchaseShipping, salePrice:p.salePrice, realShipping:p.realShipping, packCost:p.packCost, buyerShipping:p.buyerShipping, ebayFeePct:p.ebayFeePct, regPct:p.regPct, ebayFixed:p.ebayFixed, vintedPct:p.vintedPct, vintedFixed:p.vintedFixed}; Object.entries(map).forEach(([id,v])=>{ if ($(id) && v !== undefined && v !== null) $(id).value = v; }); if ($('status')) $('status').value='in_stock'; }
@@ -362,22 +362,115 @@
   }
   function resetFilters() { ['filterMode','filterCategory','filterStatus'].forEach(id=>{ if($(id)) $(id).value='all'; }); ['filterSaleMin','filterSaleMax','filterProfitMin','filterProfitMax','filterCostMin','filterCostMax'].forEach(id=>{ if($(id)) $(id).value=''; }); applyFilters(); }
 
+
   function renderDb() {
-    const body = $('dbRows'); if (!body) return; body.innerHTML=''; if ($('filterCount')) $('filterCount').textContent = t('messages.filteredCount')(filteredDbCache.length, dbCache.length);
-    if (!filteredDbCache.length) { body.innerHTML = `<tr><td colspan="11">${t('messages.noProducts')}</td></tr>`; return; }
+    const body = $('dbRows'); if (!body) return;
+    body.innerHTML='';
+    if ($('filterCount')) $('filterCount').textContent = t('messages.filteredCount')(filteredDbCache.length, dbCache.length);
+    const selectAll = $('selectAllRows');
+    if (selectAll) { selectAll.checked = false; selectAll.indeterminate = false; }
+    if (!filteredDbCache.length) { body.innerHTML = `<tr><td colspan="12">${t('messages.noProducts')}</td></tr>`; return; }
     filteredDbCache.forEach(row => {
-      const tr = document.createElement('tr'); const statusOptions = STATUS_KEYS.filter(k=>k!=='watchlist').map(k => `<option value="${k}" ${row.status===k?'selected':''}>${statusLabel(k)}</option>`).join('');
-      tr.innerHTML = `<td>${new Date(row.created_at).toLocaleDateString(lang==='it'?'it-IT':'en-GB')}</td><td>${escapeHtml(row.product_name)}</td><td>${modeLabel(row.analysis_mode || row.source_platform)}</td><td>${escapeHtml(categoryLabel(row.category))}</td><td><select class="table-select" data-status-select="${row.id}">${statusOptions}</select></td><td>${fmt(row.all_in_cost || row.purchase_price)}</td><td>${fmt(productSaleValue(row))}</td><td>${fmt(row.profit)}</td><td>${pct(row.roi)}</td><td>${escapeHtml(row.decision || '')}</td><td><div class="row-actions"><button class="btn small" data-update-status="${row.id}">${lang==='it'?'Aggiorna':'Update'}</button><button class="btn small danger" data-delete="${row.id}">${lang==='it'?'Elimina':'Delete'}</button></div></td>`;
+      const tr = document.createElement('tr');
+      const statusOptions = STATUS_KEYS.filter(k=>k!=='watchlist').map(k => `<option value="${k}" ${row.status===k?'selected':''}>${statusLabel(k)}</option>`).join('');
+      tr.innerHTML = `<td class="select-col"><input type="checkbox" data-row-select value="${row.id}" aria-label="Seleziona ${escapeHtml(row.product_name)}" /></td><td>${new Date(row.created_at).toLocaleDateString(lang==='it'?'it-IT':'en-GB')}</td><td>${escapeHtml(row.product_name)}</td><td>${modeLabel(row.analysis_mode || row.source_platform)}</td><td>${escapeHtml(categoryLabel(row.category))}</td><td><select class="table-select" data-status-select="${row.id}">${statusOptions}</select></td><td>${fmt(row.all_in_cost || row.purchase_price)}</td><td>${fmt(productSaleValue(row))}</td><td class="${(+row.profit||0)<0?'negative-number':''}">${fmt(row.profit)}</td><td class="${(+row.roi||0)<0?'negative-number':''}">${pct(row.roi)}</td><td>${escapeHtml(row.decision || '')}</td><td><div class="row-actions"><button class="btn small" data-update-status="${row.id}">${lang==='it'?'Aggiorna':'Update'}</button><button class="btn small danger" data-delete="${row.id}">${lang==='it'?'Elimina':'Delete'}</button></div></td>`;
       body.appendChild(tr);
     });
+    body.querySelectorAll('[data-row-select]').forEach(cb => cb.addEventListener('change', updateSelectAllState));
+    if (selectAll) {
+      selectAll.onchange = () => { body.querySelectorAll('[data-row-select]').forEach(cb => { cb.checked = selectAll.checked; }); updateSelectAllState(); };
+    }
     body.querySelectorAll('[data-update-status]').forEach(btn => btn.addEventListener('click', async()=>{ const id=btn.getAttribute('data-update-status'); const select=body.querySelector(`[data-status-select="${id}"]`); await updateProductStatus(id, select?.value || 'in_stock'); }));
     body.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', async()=>{ const id=btn.getAttribute('data-delete'); if(!confirm(t('messages.confirmDelete'))) return; const {error}=await supabase.from('products').delete().eq('id',id); if(error)return toast(error.message); toast(t('messages.deleted')); await loadDb(); }));
   }
 
-  async function updateProductStatus(id, status) { const payload = { status }; if (status === 'sold') { const row = dbCache.find(x=>x.id===id); payload.sale_date = row?.sale_date || new Date().toISOString().slice(0,10); payload.sale_price = row?.sale_price || row?.sold_avg_price || row?.listing_price || null; } const { error } = await supabase.from('products').update(payload).eq('id',id); if(error) return toast(`Errore aggiornamento stato: ${error.message}`); toast(t('messages.updatedStatus')(statusLabel(status))); await loadDb(); }
-  async function bulkUpdateStatus() { const status = val('bulkStatus') || 'in_stock'; const ids = filteredDbCache.map(x=>x.id); if(!ids.length) return toast(t('messages.noFiltered')); if(!confirm(t('messages.confirmBulk')(ids.length, statusLabel(status)))) return; const payload = { status }; if(status==='sold') { payload.sale_date = new Date().toISOString().slice(0,10); } const { error } = await supabase.from('products').update(payload).in('id', ids); if(error) return toast(`Errore aggiornamento: ${error.message}`); toast(t('messages.bulkDone')(ids.length)); await loadDb(); }
+  function updateSelectAllState() {
+    const all = [...document.querySelectorAll('[data-row-select]')];
+    const checked = all.filter(x=>x.checked);
+    const selectAll = $('selectAllRows');
+    if (!selectAll) return;
+    selectAll.checked = all.length > 0 && checked.length === all.length;
+    selectAll.indeterminate = checked.length > 0 && checked.length < all.length;
+  }
+  function getSelectedProductRows() {
+    const ids = [...document.querySelectorAll('[data-row-select]:checked')].map(x=>x.value);
+    return filteredDbCache.filter(row => ids.includes(row.id));
+  }
 
+  function estimatedSaleFees(row, salePrice) {
+    const mode = row.analysis_mode || row.source_platform || 'vinted_ebay';
+    const isEbaySale = mode === 'ebay' || mode === 'vinted_ebay';
+    if (!isEbaySale) return 0;
+    const e = feePresets?.ebay_private_it || {};
+    const gross = (+salePrice || 0) + (+row.buyer_shipping || 0);
+    return gross * ((+e.final_value_fee_pct || 5) + (+e.regulatory_fee_pct || 0.43)) / 100 + (+e.fixed_fee || 0.35);
+  }
+  function profitFromSoldPrice(row, salePrice) {
+    const mode = row.analysis_mode || row.source_platform || 'vinted_ebay';
+    const gross = (+salePrice || 0) + ((mode === 'ebay' || mode === 'vinted_ebay') ? (+row.buyer_shipping || 0) : 0);
+    const allIn = +row.all_in_cost || +row.purchase_price || 0;
+    const profit = gross - estimatedSaleFees(row, salePrice) - allIn - (+row.real_shipping || 0);
+    const roi = allIn > 0 ? profit / allIn * 100 : 0;
+    return { profit, roi };
+  }
 
+  async function updateProductStatus(id, status) {
+    const row = dbCache.find(x=>x.id===id);
+    if (!row) return toast('Prodotto non trovato.');
+    if (status === 'sold') { openSaleModal([row]); return; }
+    const payload = { status };
+    const { error } = await supabase.from('products').update(payload).eq('id',id);
+    if(error) return toast(`Errore aggiornamento stato: ${error.message}`);
+    toast(t('messages.updatedStatus')(statusLabel(status)));
+    await loadDb();
+  }
+
+  async function bulkUpdateStatus() {
+    const status = val('bulkStatus') || 'in_stock';
+    const rows = getSelectedProductRows();
+    if(!rows.length) return toast(lang==='it' ? 'Seleziona almeno un prodotto.' : 'Select at least one product.');
+    if(status==='sold') { openSaleModal(rows); return; }
+    const ids = rows.map(x=>x.id);
+    if(!confirm(t('messages.confirmBulk')(ids.length, statusLabel(status)))) return;
+    const { error } = await supabase.from('products').update({ status }).in('id', ids);
+    if(error) return toast(`Errore aggiornamento: ${error.message}`);
+    toast(t('messages.bulkDone')(ids.length));
+    await loadDb();
+  }
+
+  function openSaleModal(rows) {
+    saleUpdateQueue = rows;
+    const body = $('saleModalRows'); if (!body) return;
+    body.innerHTML = rows.map(row => {
+      const oldPrice = productSaleValue(row);
+      const calc = profitFromSoldPrice(row, oldPrice);
+      return `<tr data-sale-row="${row.id}"><td>${new Date().toLocaleDateString(lang==='it'?'it-IT':'en-GB')}</td><td>${escapeHtml(row.product_name)}</td><td>${escapeHtml(categoryLabel(row.category))}</td><td>${fmt(row.all_in_cost || row.purchase_price)}</td><td>${fmt(oldPrice)}</td><td><input class="sale-price-input" type="number" min="0" step="0.01" value="${Number(oldPrice || 0).toFixed(2)}" data-sale-input="${row.id}" /></td><td class="sale-profit-preview ${calc.profit<0?'negative-number':''}" data-sale-profit="${row.id}">${fmt(calc.profit)}</td></tr>`;
+    }).join('');
+    body.querySelectorAll('[data-sale-input]').forEach(input => input.addEventListener('input', () => {
+      const row = saleUpdateQueue.find(x=>x.id===input.dataset.saleInput);
+      const calc = profitFromSoldPrice(row, parseFloat(input.value || '0'));
+      const cell = body.querySelector(`[data-sale-profit="${row.id}"]`);
+      if (cell) { cell.textContent = fmt(calc.profit); cell.classList.toggle('negative-number', calc.profit < 0); }
+    }));
+    $('saleModal')?.classList.remove('hidden');
+  }
+  function closeSaleModal() { $('saleModal')?.classList.add('hidden'); saleUpdateQueue = []; }
+  async function confirmSaleUpdates() {
+    const rows = [...saleUpdateQueue];
+    if (!rows.length) return closeSaleModal();
+    const updates = rows.map(row => {
+      const input = document.querySelector(`[data-sale-input="${row.id}"]`);
+      const salePrice = parseFloat(input?.value || '0');
+      const calc = profitFromSoldPrice(row, salePrice);
+      return supabase.from('products').update({ status:'sold', sale_price:salePrice, sale_date:new Date().toISOString().slice(0,10), profit:calc.profit, roi:calc.roi }).eq('id', row.id);
+    });
+    const results = await Promise.all(updates);
+    const err = results.find(r => r.error)?.error;
+    if (err) return toast(`Errore aggiornamento vendita: ${err.message}`);
+    toast(t('messages.bulkDone')(rows.length));
+    closeSaleModal();
+    await loadDb();
+  }
 
   function renderKpis() {
     const ytdRows = currentYearRows();
@@ -409,6 +502,7 @@
   function exportCurrentCsv() { const calc=renderCalculation(); if(!calc)return; const {input,out}=calc; downloadCsv('flipmate-prodotto.csv', [['prodotto','modalita','categoria','stato','costo_all_in','prezzo_annuncio','offerta_minima','break_even','utile','roi','decisione'], [input.productName, modeLabel(input.mode), categoryLabel(input.category), statusLabel(input.status), out.allIn, out.listing, out.minOffer, out.breakEven, out.profit, out.roi, out.decision]]); }
   function exportDbCsv() { const source = filteredDbCache.length ? filteredDbCache : dbCache; const rows = [['data','prodotto','modalita','categoria','stato','costo_acquisto','prezzo_vendita','utile','roi','decisione','note']]; source.forEach(r=>rows.push([r.created_at,r.product_name,modeLabel(r.analysis_mode||r.source_platform),categoryLabel(r.category),statusLabel(r.status),r.all_in_cost,productSaleValue(r),r.profit,r.roi,r.decision,r.notes])); downloadCsv('flipmate-database-filtrato.csv', rows); }
 
+
   function showSection(name) {
     ['home','calculator','database','dashboard','settings'].forEach(s => $(s+'Section')?.classList.toggle('hidden', s !== name));
     document.querySelectorAll('[data-app-section]').forEach(b => b.classList.toggle('active', b.dataset.appSection===name));
@@ -417,30 +511,67 @@
     if (name === 'database') applyFilters();
     window.scrollTo({top:0, behavior:'smooth'});
   }
-  function chartClear(canvas) { const ctx=canvas?.getContext('2d'); if(!canvas||!ctx)return null; ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle='#617086'; ctx.font='13px system-ui,-apple-system,Segoe UI,sans-serif'; return ctx; }
+  function chartClear(canvas) {
+    const ctx=canvas?.getContext('2d'); if(!canvas||!ctx)return null;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#617086'; ctx.font='13px system-ui,-apple-system,Segoe UI,sans-serif';
+    return ctx;
+  }
   function drawNoData(canvasId,text=t('messages.noData')) { const canvas=$(canvasId), ctx=chartClear(canvas); if(!ctx)return; ctx.fillText(text,24,44); }
-  function drawBarChart(canvasId,data,formatter=fmt) { const canvas=$(canvasId), ctx=chartClear(canvas); if(!ctx)return; if(!data.length||data.every(d=>!d.value))return drawNoData(canvasId); const w=canvas.width,h=canvas.height,pad=46,max=Math.max(...data.map(d=>Math.abs(d.value)),1),barW=Math.max(28,(w-pad*2)/data.length*.58); data.forEach((d,i)=>{ const x=pad+i*((w-pad*2)/data.length)+barW*.25,bh=Math.max(4,Math.abs(d.value)/max*(h-pad*2)),y=h-pad-bh; if (d.value < 0) { ctx.fillStyle = '#dc315c'; } else { const grad=ctx.createLinearGradient(0,y,0,h-pad); grad.addColorStop(0,'#0bbf8a'); grad.addColorStop(1,'#247cff'); ctx.fillStyle=grad; } ctx.fillRect(x,y,barW,bh); ctx.fillStyle='#132033'; ctx.fillText(formatter(d.value),x,Math.max(18,y-8)); ctx.fillStyle='#617086'; ctx.fillText(String(d.label).slice(0,14),x,h-18); }); }
-  function drawLineChart(canvasId,data) { const canvas=$(canvasId),ctx=chartClear(canvas); if(!ctx)return; if(data.length<2)return drawNoData(canvasId,t('messages.trendNeed')); const w=canvas.width,h=canvas.height,pad=46,max=Math.max(...data.map(d=>d.value),1),min=Math.min(...data.map(d=>d.value),0),range=Math.max(max-min,1); const point=(d,i)=>({x:pad+i*((w-pad*2)/(data.length-1)), y:h-pad-((d.value-min)/range)*(h-pad*2)}); ctx.strokeStyle='#0bbf8a'; ctx.lineWidth=3; ctx.beginPath(); data.forEach((d,i)=>{const p=point(d,i); if(i===0)ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);}); ctx.stroke(); data.forEach((d,i)=>{const p=point(d,i); ctx.fillStyle='#247cff'; ctx.beginPath(); ctx.arc(p.x,p.y,5,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#617086'; ctx.fillText(d.label,p.x-18,h-18); ctx.fillStyle='#132033'; ctx.fillText(fmt(d.value),p.x-22,p.y-12);}); }
-
-  function drawPieChart(canvasId, data) {
+  function roundedRect(ctx,x,y,w,h,r=10){ const rr=Math.min(r,Math.abs(w)/2,Math.abs(h)/2); ctx.beginPath(); ctx.moveTo(x+rr,y); ctx.arcTo(x+w,y,x+w,y+h,rr); ctx.arcTo(x+w,y+h,x,y+h,rr); ctx.arcTo(x,y+h,x,y,rr); ctx.arcTo(x,y,x+w,y,rr); ctx.closePath(); }
+  function drawBarChart(canvasId,data,formatter=fmt) {
     const canvas=$(canvasId), ctx=chartClear(canvas); if(!ctx)return;
-    const total = data.reduce((a,b)=>a+(+b.value||0),0);
-    if(!total) return drawNoData(canvasId);
-    const cx = canvas.width * 0.34, cy = canvas.height * 0.52, r = Math.min(canvas.width, canvas.height) * 0.28;
-    const colors = ['#0bbf8a','#247cff','#f6a623','#dc315c','#6b7cff'];
-    let angle = -Math.PI/2;
-    data.forEach((d,i)=>{ const slice = (d.value/total)*Math.PI*2; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,angle,angle+slice); ctx.closePath(); ctx.fillStyle=colors[i%colors.length]; ctx.fill(); angle += slice; });
-    let y = 50; data.forEach((d,i)=>{ ctx.fillStyle=colors[i%colors.length]; ctx.fillRect(canvas.width*0.62, y-10, 12, 12); ctx.fillStyle='#132033'; ctx.fillText(`${d.label}: ${d.value}`, canvas.width*0.62+20, y); y += 28; });
+    if(!data.length||data.every(d=>!d.value))return drawNoData(canvasId);
+    const w=canvas.width,h=canvas.height,padL=58,padR=24,padT=30,padB=54;
+    const values=data.map(d=>+d.value||0), max=Math.max(...values,0), min=Math.min(...values,0), span=Math.max(max-min,1);
+    const zeroY = h-padB - ((0-min)/span)*(h-padT-padB);
+    ctx.strokeStyle='#e7edf6'; ctx.lineWidth=1;
+    for(let i=0;i<4;i++){ const y=padT+i*(h-padT-padB)/3; ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(w-padR,y); ctx.stroke(); }
+    ctx.strokeStyle='#cbd7e6'; ctx.beginPath(); ctx.moveTo(padL,zeroY); ctx.lineTo(w-padR,zeroY); ctx.stroke();
+    const slot=(w-padL-padR)/data.length, barW=Math.min(64,slot*.55);
+    data.forEach((d,i)=>{
+      const value=+d.value||0, x=padL+i*slot+(slot-barW)/2;
+      const yVal=h-padB-((value-min)/span)*(h-padT-padB), y=Math.min(yVal,zeroY), bh=Math.max(4,Math.abs(zeroY-yVal));
+      if(value<0){ ctx.fillStyle='#dc315c'; } else { const grad=ctx.createLinearGradient(0,y,0,y+bh); grad.addColorStop(0,'#00c896'); grad.addColorStop(1,'#247cff'); ctx.fillStyle=grad; }
+      roundedRect(ctx,x,y,barW,bh,12); ctx.fill();
+      ctx.fillStyle=value<0?'#dc315c':'#132033'; ctx.font='700 13px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.fillText(formatter(value),x-4,Math.max(18,y-8));
+      ctx.fillStyle='#617086'; ctx.font='12px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.fillText(String(d.label).slice(0,16),x-4,h-22);
+    });
+  }
+  function drawLineChart(canvasId,data) {
+    const canvas=$(canvasId),ctx=chartClear(canvas); if(!ctx)return; if(data.length<2)return drawNoData(canvasId,t('messages.trendNeed'));
+    const w=canvas.width,h=canvas.height,padL=58,padR=26,padT=32,padB=52;
+    const vals=data.map(d=>+d.value||0), max=Math.max(...vals,1), min=Math.min(...vals,0), range=Math.max(max-min,1);
+    ctx.strokeStyle='#e7edf6'; ctx.lineWidth=1;
+    for(let i=0;i<4;i++){ const y=padT+i*(h-padT-padB)/3; ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(w-padR,y); ctx.stroke(); }
+    const point=(d,i)=>({x:padL+i*((w-padL-padR)/(data.length-1)), y:h-padB-(((+d.value||0)-min)/range)*(h-padT-padB)});
+    const grad=ctx.createLinearGradient(padL,0,w-padR,0); grad.addColorStop(0,'#0bbf8a'); grad.addColorStop(1,'#247cff');
+    ctx.strokeStyle=grad; ctx.lineWidth=4; ctx.lineJoin='round'; ctx.lineCap='round'; ctx.beginPath(); data.forEach((d,i)=>{const p=point(d,i); if(i===0)ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);}); ctx.stroke();
+    data.forEach((d,i)=>{const p=point(d,i); ctx.fillStyle='#fff'; ctx.strokeStyle='#247cff'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(p.x,p.y,6,0,Math.PI*2); ctx.fill(); ctx.stroke(); ctx.fillStyle='#617086'; ctx.font='12px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.fillText(d.label,p.x-18,h-20); if(i===data.length-1||i===0||i%2===0){ ctx.fillStyle=((+d.value||0)<0)?'#dc315c':'#132033'; ctx.font='700 12px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.fillText(fmt(d.value),p.x-22,p.y-14); }});
+  }
+  function drawPieChart(canvasId, data) {
+    const canvas=$(canvasId),ctx=chartClear(canvas); if(!ctx)return;
+    const total=data.reduce((a,b)=>a+(+b.value||0),0); if(!total)return drawNoData(canvasId);
+    const w=canvas.width,h=canvas.height,cx=Math.round(w*.34),cy=Math.round(h*.52),r=Math.min(w,h)*.30,inner=r*.56;
+    const colors=['#247cff','#0bbf8a','#ffb020','#dc315c','#8b5cf6','#06b6d4']; let start=-Math.PI/2;
+    data.forEach((d,i)=>{ const val=+d.value||0, ang=val/total*Math.PI*2; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,start,start+ang); ctx.closePath(); ctx.fillStyle=colors[i%colors.length]; ctx.fill(); start+=ang; });
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(cx,cy,inner,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#132033'; ctx.font='800 24px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.textAlign='center'; ctx.fillText(String(total),cx,cy+6); ctx.font='12px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.fillStyle='#617086'; ctx.fillText(lang==='it'?'prodotti':'items',cx,cy+26); ctx.textAlign='left';
+    let lx=w*.62, ly=58; data.forEach((d,i)=>{ const pctv=(+d.value||0)/total*100; ctx.fillStyle=colors[i%colors.length]; roundedRect(ctx,lx,ly-12,14,14,4); ctx.fill(); ctx.fillStyle='#132033'; ctx.font='700 13px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.fillText(`${d.label}: ${d.value}`,lx+22,ly); ctx.fillStyle='#617086'; ctx.font='12px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.fillText(`${pctv.toFixed(1)}%`,lx+22,ly+17); ly+=46; });
   }
 
   function renderAnalytics() {
     if(!$('revenueChart'))return;
     updateChartLayout();
+    const comparisonOn = !!$('enableComparison')?.checked;
+    document.querySelectorAll('.comparison-control').forEach(el=>el.classList.toggle('hidden', !comparisonOn));
+    document.querySelectorAll('.delta-kpi').forEach(el=>el.classList.toggle('hidden', !comparisonOn));
     const ytd = aggregateMetrics(currentYearRows());
     const mtd = aggregateMetrics(currentMonthRows());
     const selectedRows = dashboardRowsFromSelectors('dashboardYear','dashboardMonth');
     const selected = aggregateMetrics(selectedRows);
-    const compareRows = $('compareYear')?.value ? dbCache.filter(row => inYearMonth(rowCreatedDate(row), $('compareYear').value, $('compareMonth')?.value || 'all')) : [];
+    const compareRows = (comparisonOn && $('compareYear')?.value) ? dbCache.filter(row => inYearMonth(rowCreatedDate(row), $('compareYear').value, $('compareMonth')?.value || 'all')) : [];
     const compare = aggregateMetrics(compareRows);
     setMaybe('ytdGrossRevenue', ytd.grossRevenue); setMaybe('ytdNetSales', ytd.netSales); setMaybe('ytdProfit', ytd.profit); setMaybe('ytdCosts', ytd.costs);
     setMaybe('mtdGrossRevenue', mtd.grossRevenue); setMaybe('mtdNetSales', mtd.netSales); setMaybe('mtdProfit', mtd.profit); setMaybe('mtdCosts', mtd.costs);
@@ -479,7 +610,8 @@
     ['filterMode','filterCategory','filterStatus','filterSaleMin','filterSaleMax','filterProfitMin','filterProfitMax','filterCostMin','filterCostMax'].forEach(id=>{ $(id)?.addEventListener('input',applyFilters); $(id)?.addEventListener('change',applyFilters); });
     document.querySelectorAll('[data-app-section]').forEach(btn=>btn.addEventListener('click',()=>showSection(btn.dataset.appSection)));
     $('appSectionMobileSelect')?.addEventListener('change', e => showSection(e.target.value));
-    ['dashboardYear','dashboardMonth','compareYear','compareMonth','chartLayoutMode'].forEach(id=>{ $(id)?.addEventListener('change', renderAnalytics); });
+    ['dashboardYear','dashboardMonth','compareYear','compareMonth','chartLayoutMode','enableComparison'].forEach(id=>{ $(id)?.addEventListener('change', renderAnalytics); });
+    $('closeSaleModal')?.addEventListener('click', closeSaleModal); $('cancelSaleUpdate')?.addEventListener('click', closeSaleModal); $('confirmSaleUpdate')?.addEventListener('click', confirmSaleUpdates);
     document.querySelectorAll('#calculatorForm input,#calculatorForm select,#calculatorForm textarea').forEach(el=>{ el.addEventListener('input', renderCalculation); el.addEventListener('change', renderCalculation); });
     $('profilePurpose')?.addEventListener('change',()=>{ if($('analysisMode')){ $('analysisMode').value=val('profilePurpose'); applyModeFields(); }});
   }

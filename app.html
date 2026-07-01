@@ -195,7 +195,7 @@
           </div>
 
           <div class="bulk-panel">
-            <label><span data-i18n="db.bulkStatus">Imposta stato su prodotti filtrati</span>
+            <label>Imposta stato su prodotti selezionati
               <select id="bulkStatus" data-status-select-basic>
                 <option value="in_stock">In stock</option>
                 <option value="listed">In vendita</option>
@@ -203,13 +203,13 @@
                 <option value="archived">Archiviato</option>
               </select>
             </label>
-            <button class="btn primary small" id="bulkUpdateStatus" data-i18n="db.updateAll">Aggiorna tutto</button>
-            <p class="fineprint" data-i18n="db.bulkNote">Aggiorna solo i prodotti visualizzati dai filtri attuali.</p>
+            <button class="btn primary small" id="bulkUpdateStatus">Aggiorna selezionati</button>
+            <p class="fineprint">Seleziona le righe dal pallino nella tabella. Il pallino in intestazione seleziona tutto il filtrato.</p>
           </div>
 
           <div class="table-wrap">
             <table>
-              <thead><tr><th data-i18n="db.date">Data</th><th data-i18n="db.product">Prodotto</th><th data-i18n="db.mode">Modalità</th><th data-i18n="db.category">Categoria</th><th data-i18n="db.status">Stato</th><th data-i18n="db.cost">Costo acquisto</th><th data-i18n="db.sale">Prezzo vendita</th><th data-i18n="db.profit">Utile</th><th>ROI</th><th data-i18n="db.decision">Decisione</th><th data-i18n="db.actions">Azioni</th></tr></thead>
+              <thead><tr><th class="select-col"><input type="checkbox" id="selectAllRows" aria-label="Seleziona tutto" /></th><th data-i18n="db.date">Data</th><th data-i18n="db.product">Prodotto</th><th data-i18n="db.mode">Modalità</th><th data-i18n="db.category">Categoria</th><th data-i18n="db.status">Stato</th><th data-i18n="db.cost">Costo acquisto</th><th data-i18n="db.sale">Prezzo vendita</th><th data-i18n="db.profit">Utile</th><th>ROI</th><th data-i18n="db.decision">Decisione</th><th data-i18n="db.actions">Azioni</th></tr></thead>
               <tbody id="dbRows"></tbody>
             </table>
           </div>
@@ -226,8 +226,9 @@
           <div class="form-grid filters-grid dashboard-control-grid">
             <label><span>Anno</span><select id="dashboardYear"></select></label>
             <label><span>Mese</span><select id="dashboardMonth"></select></label>
-            <label><span>Anno confronto</span><select id="compareYear"></select></label>
-            <label><span>Mese confronto</span><select id="compareMonth"></select></label>
+            <label class="switch-field"><span>Mostra Delta confronto</span><input id="enableComparison" type="checkbox" /></label>
+            <label class="comparison-control hidden"><span>Anno confronto</span><select id="compareYear"></select></label>
+            <label class="comparison-control hidden"><span>Mese confronto</span><select id="compareMonth"></select></label>
             <label><span>Vista grafici</span><select id="chartLayoutMode"><option value="paired">A coppie</option><option value="single">Uno per riga</option></select></label>
           </div>
         </article>
@@ -247,16 +248,16 @@
         </div>
 
         <div class="dashboard-block">
-          <h3>Periodo selezionato e confronto</h3>
+          <h3>Periodo selezionato</h3>
           <div class="kpi-grid dashboard-kpis dashboard-summary-grid">
             <article class="kpi premium-kpi"><span>Periodo Ricavi lordi</span><strong id="selectedGrossRevenue">€0,00</strong></article>
             <article class="kpi premium-kpi"><span>Periodo Vendita netta</span><strong id="selectedNetSales">€0,00</strong></article>
             <article class="kpi premium-kpi"><span>Periodo Utile</span><strong id="selectedProfit">€0,00</strong></article>
             <article class="kpi premium-kpi"><span>Periodo Capitale investito</span><strong id="selectedCosts">€0,00</strong></article>
-            <article class="kpi premium-kpi"><span>Delta Ricavi lordi</span><strong id="deltaGrossRevenue">€0,00</strong></article>
-            <article class="kpi premium-kpi"><span>Delta Vendita netta</span><strong id="deltaNetSales">€0,00</strong></article>
-            <article class="kpi premium-kpi"><span>Delta Utile</span><strong id="deltaProfit">€0,00</strong></article>
-            <article class="kpi premium-kpi"><span>Delta Capitale investito</span><strong id="deltaCosts">€0,00</strong></article>
+            <article class="kpi premium-kpi delta-kpi hidden"><span>Delta Ricavi lordi</span><strong id="deltaGrossRevenue">€0,00</strong></article>
+            <article class="kpi premium-kpi delta-kpi hidden"><span>Delta Vendita netta</span><strong id="deltaNetSales">€0,00</strong></article>
+            <article class="kpi premium-kpi delta-kpi hidden"><span>Delta Utile</span><strong id="deltaProfit">€0,00</strong></article>
+            <article class="kpi premium-kpi delta-kpi hidden"><span>Delta Capitale investito</span><strong id="deltaCosts">€0,00</strong></article>
             <article class="kpi premium-kpi"><span>Ticket medio</span><strong id="avgTicket">€0,00</strong></article>
             <article class="kpi premium-kpi"><span>Margine medio %</span><strong id="avgMarginPct">0%</strong></article>
             <article class="kpi premium-kpi"><span>Utile medio/prodotto</span><strong id="avgProfitPerItem">€0,00</strong></article>
@@ -265,10 +266,10 @@
         </div>
 
         <div class="grid two analytics-grid" id="analyticsGrid">
-          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3>Ricavi lordi vs vendita netta</h3></div></div><canvas id="revenueChart" width="640" height="320" aria-label="Revenue chart"></canvas></article>
-          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3>Margine per categoria</h3></div></div><canvas id="categoryMarginChart" width="640" height="320" aria-label="Category margin chart"></canvas></article>
-          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3>Composizione stock</h3></div></div><canvas id="stockStatusPieChart" width="640" height="320" aria-label="Stock status pie chart"></canvas></article>
-          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3>Trend utile mensile</h3></div></div><canvas id="profitTrendChart" width="640" height="320" aria-label="Profit trend chart"></canvas></article>
+          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3>Ricavi lordi vs vendite nette</h3><p class="chart-note">Confronto tra incasso lordo e ricavo netto stimato.</p></div></div><canvas id="revenueChart" width="640" height="320" aria-label="Revenue chart"></canvas></article>
+          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3>Margine per categoria</h3><p class="chart-note">Quali categorie stanno generando più utile.</p></div></div><canvas id="categoryMarginChart" width="640" height="320" aria-label="Category margin chart"></canvas></article>
+          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3>Composizione stock</h3><p class="chart-note">Distribuzione prodotti per stato operativo.</p></div></div><canvas id="stockStatusPieChart" width="640" height="320" aria-label="Stock status pie chart"></canvas></article>
+          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3>Trend utile mensile</h3><p class="chart-note">Andamento dell’utile mese per mese con indicatori.</p></div></div><canvas id="profitTrendChart" width="640" height="320" aria-label="Profit trend chart"></canvas></article>
           <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Insight</span><h3>Classifica categorie</h3></div></div><div id="categoryRanking" class="ranking-list"></div></article>
         </div>
       </section>
@@ -302,6 +303,26 @@
       </section>
     </section>
   </main>
+
+  <div id="saleModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="saleModalTitle">
+    <div class="modal-card">
+      <div class="card-header">
+        <div><span class="eyebrow">Vendita</span><h3 id="saleModalTitle">Conferma prezzo venduto</h3></div>
+        <button class="btn small ghost" id="closeSaleModal">Chiudi</button>
+      </div>
+      <p class="muted">Inserisci il prezzo reale di vendita per aggiornare stato, utile e ROI.</p>
+      <div class="sale-modal-table-wrap">
+        <table class="sale-modal-table">
+          <thead><tr><th>Data</th><th>Descrizione</th><th>Categoria</th><th>Costo</th><th>Prezzo vecchio</th><th>Prezzo nuovo</th><th>Utile nuovo</th></tr></thead>
+          <tbody id="saleModalRows"></tbody>
+        </table>
+      </div>
+      <div class="actions-row wrap modal-actions">
+        <button class="btn primary" id="confirmSaleUpdate">Conferma vendita</button>
+        <button class="btn ghost" id="cancelSaleUpdate">Annulla</button>
+      </div>
+    </div>
+  </div>
 
   <div id="toast" class="toast hidden"></div>
   <script src="supabase-config.js"></script>

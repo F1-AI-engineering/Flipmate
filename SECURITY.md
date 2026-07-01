@@ -1,23 +1,24 @@
-# Security notes — FlipMate V9
+# Security notes — FlipMate V10
 
-## Attivo
+## Stato sicurezza
 
-- Supabase Auth per login, registrazione e reset password.
+- Auth gestita da Supabase.
 - Password non salvate nel database applicativo.
-- Supabase RLS per separazione dati utente.
-- CSV injection mitigation già presente in export.
-- Nessuna service role key nel frontend.
-- Reset password via email sicura.
+- RLS Supabase invariata rispetto alle versioni precedenti.
+- Aggiornamento massivo lavora sugli ID dei prodotti visibili e selezionati dall'utente autenticato; RLS limita comunque le righe al proprietario.
+- Popup vendita aggiorna solo `status`, `sale_price`, `sale_date`, `profit`, `roi`.
 
-## Attenzione
+## Rischi residui
 
-- I preset commissioni sono file statici pubblici: non contengono dati sensibili.
-- Le funzioni premium sono sbloccate lato UI per test completo. Per monetizzazione reale serve controllo piano lato backend/Supabase/Stripe.
-- Recupero password via solo username non implementato per evitare enumerazione account; serve Edge Function dedicata.
+- Premium ancora non protetto lato backend.
+- Calcolo utile su prezzo venduto usa preset commissioni statici lato frontend.
+- Per produzione, validare logiche economiche lato backend o funzione SQL.
+- Nessuna funzione admin esposta nel frontend.
 
-## Prima di ADV pubblico
+## Raccomandazioni prima della pubblicazione ampia
 
-- Aggiornare privacy/cookie policy.
-- Collegare eventuale analytics/advertising solo con gestione consenso.
-- Bloccare premium lato server.
-- Testare RLS con almeno due account diversi.
+1. Test RLS con due utenti.
+2. Test aggiornamento massivo su righe selezionate.
+3. Test reset password.
+4. Verifica Security Advisor Supabase.
+5. Non esporre mai service role key.
