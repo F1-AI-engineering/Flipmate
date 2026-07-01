@@ -30,3 +30,47 @@
 .negative-number{color:var(--danger)!important;font-weight:900}.chart-note{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.35}.chart-card canvas{box-shadow:inset 0 0 0 1px rgba(203,215,230,.8);border-radius:18px;background:#fff}.switch-field{align-content:start}.switch-field input{width:56px;min-height:28px;height:28px;appearance:none;border-radius:999px;background:#d9e3ef;position:relative;border:1px solid var(--line);cursor:pointer;transition:.2s}.switch-field input::before{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:999px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.16);transition:.2s}.switch-field input:checked{background:linear-gradient(135deg,var(--primary),var(--primary2));border-color:transparent}.switch-field input:checked::before{transform:translateX(27px)}
 .modal-backdrop{position:fixed;inset:0;background:rgba(8,20,38,.58);backdrop-filter:blur(6px);z-index:80;display:grid;place-items:center;padding:18px}.modal-card{width:min(1120px,100%);max-height:88vh;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:24px;box-shadow:0 28px 80px rgba(10,25,47,.28);padding:24px}.sale-modal-table-wrap{overflow:auto;border:1px solid var(--line);border-radius:16px;margin:16px 0}.sale-modal-table{min-width:980px}.sale-price-input{width:130px;min-height:40px;border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:#fff}.sale-profit-preview{font-weight:900}.modal-actions{justify-content:flex-end}
 @media (max-width:560px){.modal-backdrop{padding:10px;align-items:end}.modal-card{max-height:92vh;border-radius:20px;padding:16px}.sale-modal-table{min-width:900px}.chart-card canvas{height:auto}.chart-note{font-size:11px}.select-col{width:38px}}
+
+
+/* --- V10.1 UX audit fixes: readable charts, guided onboarding, mobile cleanup --- */
+.chart-card{overflow:hidden}
+.chart-card canvas{display:block;width:100%;max-width:100%;min-height:260px}
+.dashboard-summary-grid .kpi strong.negative-number,
+.compact-kpis .kpi strong.negative-number{color:var(--danger)!important}
+.tutorial-overlay{position:fixed;inset:0;background:rgba(8,20,38,.16);z-index:95;pointer-events:none}
+.tutorial-popover{width:min(340px,calc(100vw - 28px));background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 24px 80px rgba(8,20,38,.25);padding:18px;pointer-events:auto}
+.tutorial-popover h3{margin:6px 0 8px}.tutorial-popover p{color:var(--muted);margin:0 0 14px}.tutorial-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.tutorial-highlight{position:relative!important;z-index:96!important;outline:3px solid var(--primary)!important;outline-offset:5px!important;border-radius:18px!important;box-shadow:0 0 0 8px rgba(11,191,138,.18),0 20px 48px rgba(8,20,38,.20)!important}
+#startTutorial{border-color:rgba(11,191,138,.36)}
+@media (max-width:860px){
+  .analytics-grid{grid-template-columns:1fr!important}
+  .chart-card canvas{min-height:230px}
+  .dashboard-control-grid{grid-template-columns:1fr 1fr}
+}
+@media (max-width:560px){
+  body{font-size:14px;line-height:1.45}
+  .app-topbar{display:grid;grid-template-columns:1fr auto;align-items:center;padding:10px 12px;gap:8px}
+  .app-topbar .brand-row{min-width:0}.app-topbar .brand-row span{font-size:17px}
+  .app-nav{grid-column:1/-1;display:grid!important;grid-template-columns:1fr 1fr;gap:8px;width:100%}
+  .compact-lang{display:none!important}
+  .app-mobile-nav{grid-column:1/-1;order:1}
+  .account-menu-wrap{grid-column:1/-1;order:2}
+  #accountButton{min-height:42px}
+  .section{padding:16px 10px 28px}
+  .app-header-card{display:none}
+  .compact-kpis{display:flex!important;overflow-x:auto;gap:10px;margin:0 -10px 14px;padding:8px 10px;scroll-snap-type:x mandatory}
+  .compact-kpis .kpi{min-width:190px;scroll-snap-align:start;padding:12px;border-radius:16px}
+  .compact-kpis .kpi span{font-size:11px;line-height:1.25}.compact-kpis .kpi strong{font-size:18px}
+  .card{padding:14px;border-radius:18px}
+  .section-heading.left{margin-bottom:14px}.section-heading h2{font-size:22px;margin:6px 0}.section-heading p{font-size:14px}
+  .home-split-grid,.grid.two,.form-grid,.filters-grid,.dashboard-control-grid,.dashboard-summary-grid{grid-template-columns:1fr!important}
+  .actions-row{gap:8px}.actions-row .btn{width:100%}
+  .result-grid{grid-template-columns:1fr 1fr!important;gap:10px}
+  .result-grid div{padding:12px}.result-grid span{font-size:11px}.result-grid strong{font-size:18px}
+  .table-wrap{border-radius:14px;margin-left:-4px;margin-right:-4px;max-height:70vh}
+  table{min-width:1060px}
+  .bulk-panel{gap:8px}
+  .chart-card canvas{min-height:220px}
+  .tutorial-popover{left:10px!important;right:10px!important;bottom:10px!important;top:auto!important;width:auto}
+  .modal-card{padding:14px}.sale-modal-table{min-width:820px}
+}

@@ -83,6 +83,7 @@
               <button class="btn primary" data-app-section="calculator">Aggiungi prodotto</button>
               <button class="btn ghost" data-app-section="database">Apri database</button>
               <button class="btn ghost" data-app-section="dashboard">Vai alla dashboard</button>
+              <button class="btn" id="startTutorial">Tutorial rapido</button>
             </div>
           </article>
           <article class="card">
@@ -117,9 +118,6 @@
                 <select id="status" data-status-select-basic>
                   <option value="watchlist">Da valutare</option>
                   <option value="in_stock">In stock</option>
-                  <option value="listed">In vendita</option>
-                  <option value="sold">Venduto</option>
-                  <option value="archived">Archiviato</option>
                 </select>
                 <small class="field-hint" data-i18n="calc.stockHint">Per salvare nel DB devi impostare lo stato su In stock. Gli altri stati si aggiornano dal Database.</small>
               </label>
@@ -262,14 +260,19 @@
             <article class="kpi premium-kpi"><span>Margine medio %</span><strong id="avgMarginPct">0%</strong></article>
             <article class="kpi premium-kpi"><span>Utile medio/prodotto</span><strong id="avgProfitPerItem">€0,00</strong></article>
             <article class="kpi premium-kpi"><span>Stock fermo 45gg</span><strong id="staleStockCount">0</strong></article>
+            <article class="kpi premium-kpi"><span>Prodotti venduti</span><strong id="soldItemsCount">0</strong></article>
+            <article class="kpi premium-kpi"><span>Tasso di vendita</span><strong id="sellThroughSelected">0%</strong></article>
+            <article class="kpi premium-kpi"><span>ROI medio</span><strong id="avgRoiSelected">0%</strong></article>
           </div>
         </div>
 
         <div class="grid two analytics-grid" id="analyticsGrid">
-          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3>Ricavi lordi vs vendite nette</h3><p class="chart-note">Confronto tra incasso lordo e ricavo netto stimato.</p></div></div><canvas id="revenueChart" width="640" height="320" aria-label="Revenue chart"></canvas></article>
-          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3>Margine per categoria</h3><p class="chart-note">Quali categorie stanno generando più utile.</p></div></div><canvas id="categoryMarginChart" width="640" height="320" aria-label="Category margin chart"></canvas></article>
-          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3>Composizione stock</h3><p class="chart-note">Distribuzione prodotti per stato operativo.</p></div></div><canvas id="stockStatusPieChart" width="640" height="320" aria-label="Stock status pie chart"></canvas></article>
-          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3>Trend utile mensile</h3><p class="chart-note">Andamento dell’utile mese per mese con indicatori.</p></div></div><canvas id="profitTrendChart" width="640" height="320" aria-label="Profit trend chart"></canvas></article>
+          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Vendite</span><h3>Ricavi e vendite nette</h3><p class="chart-note">Quanto incassi rispetto a quanto resta dopo i costi diretti.</p></div></div><canvas id="revenueChart" width="640" height="360" aria-label="Revenue chart"></canvas></article>
+          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Categorie</span><h3>Utile per categoria</h3><p class="chart-note">Classifica immediata delle categorie che generano più utile.</p></div></div><canvas id="categoryMarginChart" width="640" height="360" aria-label="Category margin chart"></canvas></article>
+          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Stock</span><h3>Composizione stock</h3><p class="chart-note">Distribuzione dei prodotti tra stock, in vendita, venduti e archiviati.</p></div></div><canvas id="stockStatusPieChart" width="640" height="360" aria-label="Stock status pie chart"></canvas></article>
+          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Trend</span><h3>Utile mese per mese</h3><p class="chart-note">Andamento mensile con punti evidenziati e linea di tendenza.</p></div></div><canvas id="profitTrendChart" width="640" height="360" aria-label="Profit trend chart"></canvas></article>
+          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Capitale</span><h3>Capitale investito per categoria</h3><p class="chart-note">Dove è concentrato il denaro immobilizzato nello stock.</p></div></div><canvas id="categoryCostChart" width="640" height="360" aria-label="Category cost chart"></canvas></article>
+          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Margini</span><h3>Utile potenziale vs realizzato</h3><p class="chart-note">Confronto fra guadagno già chiuso e guadagno ancora nello stock.</p></div></div><canvas id="profitMixChart" width="640" height="360" aria-label="Profit mix chart"></canvas></article>
           <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Insight</span><h3>Classifica categorie</h3></div></div><div id="categoryRanking" class="ranking-list"></div></article>
         </div>
       </section>
@@ -320,6 +323,19 @@
       <div class="actions-row wrap modal-actions">
         <button class="btn primary" id="confirmSaleUpdate">Conferma vendita</button>
         <button class="btn ghost" id="cancelSaleUpdate">Annulla</button>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="tutorialOverlay" class="tutorial-overlay hidden">
+    <div class="tutorial-popover" id="tutorialPopover">
+      <span class="eyebrow" id="tutorialStepLabel">Tutorial</span>
+      <h3 id="tutorialTitle">Benvenuto</h3>
+      <p id="tutorialText">Ti guidiamo nella prima operazione.</p>
+      <div class="tutorial-actions">
+        <button class="btn ghost small" id="skipTutorial">Salta</button>
+        <button class="btn primary small" id="nextTutorial">Avanti</button>
       </div>
     </div>
   </div>

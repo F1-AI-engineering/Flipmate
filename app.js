@@ -87,7 +87,7 @@
     });
     document.querySelectorAll('[data-status-select-basic]').forEach(select => {
       const current = select.value || 'watchlist';
-      const keys = select.id === 'bulkStatus' ? STATUS_KEYS.filter(k=>k!=='watchlist') : STATUS_KEYS;
+      const keys = select.id === 'bulkStatus' ? STATUS_KEYS.filter(k=>k!=='watchlist') : (select.id === 'status' ? ['watchlist','in_stock'] : STATUS_KEYS);
       select.innerHTML = keys.map(k => `<option value="${k}" ${current===k?'selected':''}>${I18N[lang].status[k]}</option>`).join('');
     });
     document.querySelectorAll('[data-status-filter]').forEach(select => {
@@ -145,7 +145,7 @@
     $('startFreeTrial2')?.addEventListener('click', start);
   }
 
-  let supabase = null, session = null, profile = null, dbCache = [], filteredDbCache = [], feePresets = null, saleUpdateQueue = [];
+  let supabase = null, session = null, profile = null, dbCache = [], filteredDbCache = [], feePresets = null, saleUpdateQueue = [], tutorialActive = false, tutorialStep = 0;
   function ensureSupabase() { const url = window.FLIPMATE_SUPABASE_URL; const key = window.FLIPMATE_SUPABASE_ANON_KEY; if (!url || !key || !window.supabase) return null; return window.supabase.createClient(url, key); }
   function getPendingCalc() { try { return JSON.parse(sessionStorage.getItem('flipmate_pending_calc') || 'null'); } catch { return null; } }
   function fillFormFromPayload(p) { if (!p) return; const map = {analysisMode:p.mode, productName:p.productName, category:p.category, purchasePrice:p.purchasePrice, purchaseShipping:p.purchaseShipping, salePrice:p.salePrice, realShipping:p.realShipping, packCost:p.packCost, buyerShipping:p.buyerShipping, ebayFeePct:p.ebayFeePct, regPct:p.regPct, ebayFixed:p.ebayFixed, vintedPct:p.vintedPct, vintedFixed:p.vintedFixed}; Object.entries(map).forEach(([id,v])=>{ if ($(id) && v !== undefined && v !== null) $(id).value = v; }); if ($('status')) $('status').value='in_stock'; }
@@ -280,6 +280,7 @@
     if (error) return toast(`Errore salvataggio: ${error.message}`);
     toast(t('messages.saved'));
     await loadDb(); showSection('database');
+    tutorialCheckpoint('productSaved');
   }
 
   async function loadDb() { if (!session) return; const { data, error } = await supabase.from('products').select('*').order('created_at',{ascending:false}); if (error) return toast(`Errore caricamento DB: ${error.message}`); dbCache = data || []; populateDashboardFilters(); applyFilters(); renderKpis(); renderAnalytics(); }
@@ -311,7 +312,10 @@
       avgTicket: soldRows.length ? grossRevenue / soldRows.length : 0,
       avgMarginPct: grossRevenue ? realizedProfit / grossRevenue * 100 : 0,
       avgProfitPerItem: soldRows.length ? realizedProfit / soldRows.length : 0,
-      staleStockCount: stockRows.filter(r => daysOld(r) >= ((feePresets?.defaults?.stale_stock_days) || 45)).length
+      staleStockCount: stockRows.filter(r => daysOld(r) >= ((feePresets?.defaults?.stale_stock_days) || 45)).length,
+      sellThrough: rows.length ? soldRows.length / rows.length * 100 : 0,
+      avgRoi: rows.length ? rows.reduce((a,b)=>a+(+b.roi || 0),0) / rows.length : 0,
+      avgStockValue: stockRows.length ? stockValue / stockRows.length : 0
     };
   }
   function currentYearRows() { const year = new Date().getFullYear(); return dbCache.filter(row => rowCreatedDate(row).getFullYear() === year); }
@@ -422,6 +426,7 @@
     const { error } = await supabase.from('products').update(payload).eq('id',id);
     if(error) return toast(`Errore aggiornamento stato: ${error.message}`);
     toast(t('messages.updatedStatus')(statusLabel(status)));
+    if (status === 'listed') tutorialCheckpoint('listedDone');
     await loadDb();
   }
 
@@ -470,6 +475,7 @@
     toast(t('messages.bulkDone')(rows.length));
     closeSaleModal();
     await loadDb();
+    tutorialCheckpoint('soldDone');
   }
 
   function renderKpis() {
@@ -507,60 +513,95 @@
     ['home','calculator','database','dashboard','settings'].forEach(s => $(s+'Section')?.classList.toggle('hidden', s !== name));
     document.querySelectorAll('[data-app-section]').forEach(b => b.classList.toggle('active', b.dataset.appSection===name));
     if ($('appSectionMobileSelect')) $('appSectionMobileSelect').value = name;
-    if (name === 'dashboard') renderAnalytics();
+    if (name === 'dashboard') { renderAnalytics(); tutorialCheckpoint('dashboardOpened'); }
+    if (name === 'calculator') tutorialCheckpoint('calculatorOpened');
     if (name === 'database') applyFilters();
     window.scrollTo({top:0, behavior:'smooth'});
   }
   function chartClear(canvas) {
     const ctx=canvas?.getContext('2d'); if(!canvas||!ctx)return null;
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    const ratio = window.devicePixelRatio || 1;
+    const displayW = canvas.clientWidth || canvas.width;
+    const displayH = Math.round(displayW * (canvas.height / canvas.width));
+    if (canvas.width !== Math.round(displayW * ratio)) {
+      canvas.width = Math.round(displayW * ratio);
+      canvas.height = Math.round(displayH * ratio);
+      ctx.setTransform(ratio,0,0,ratio,0,0);
+    }
+    ctx.clearRect(0,0,displayW,displayH);
+    ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,displayW,displayH);
     ctx.fillStyle='#617086'; ctx.font='13px system-ui,-apple-system,Segoe UI,sans-serif';
     return ctx;
   }
-  function drawNoData(canvasId,text=t('messages.noData')) { const canvas=$(canvasId), ctx=chartClear(canvas); if(!ctx)return; ctx.fillText(text,24,44); }
-  function roundedRect(ctx,x,y,w,h,r=10){ const rr=Math.min(r,Math.abs(w)/2,Math.abs(h)/2); ctx.beginPath(); ctx.moveTo(x+rr,y); ctx.arcTo(x+w,y,x+w,y+h,rr); ctx.arcTo(x+w,y+h,x,y+h,rr); ctx.arcTo(x,y+h,x,y,rr); ctx.arcTo(x,y,x+w,y,rr); ctx.closePath(); }
+  function canvasSize(canvas) { return { w: canvas.clientWidth || canvas.width, h: canvas.clientHeight || Math.round((canvas.clientWidth || canvas.width)*0.56) || canvas.height }; }
+  function drawNoData(canvasId,text=t('messages.noData')) { const canvas=$(canvasId), ctx=chartClear(canvas); if(!ctx)return; const {w}=canvasSize(canvas); ctx.textAlign='center'; ctx.fillStyle='#617086'; ctx.font='700 14px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.fillText(text,w/2,68); ctx.textAlign='left'; }
+  function roundedRect(ctx,x,y,w,h,r=12){ const rr=Math.min(r,Math.abs(w)/2,Math.abs(h)/2); ctx.beginPath(); ctx.moveTo(x+rr,y); ctx.arcTo(x+w,y,x+w,y+h,rr); ctx.arcTo(x+w,y+h,x,y+h,rr); ctx.arcTo(x,y+h,x,y,rr); ctx.arcTo(x,y,x+w,y,rr); ctx.closePath(); }
+  function drawValueBadge(ctx, text, x, y, negative=false) {
+    ctx.font='800 12px system-ui,-apple-system,Segoe UI,sans-serif';
+    const pad=8, metrics=ctx.measureText(text), bw=metrics.width+pad*2, bh=24;
+    ctx.fillStyle=negative?'rgba(220,49,92,.10)':'rgba(36,124,255,.10)';
+    roundedRect(ctx,x-bw/2,y-bh/2,bw,bh,10); ctx.fill();
+    ctx.fillStyle=negative?'#dc315c':'#132033'; ctx.textAlign='center'; ctx.fillText(text,x,y+4); ctx.textAlign='left';
+  }
   function drawBarChart(canvasId,data,formatter=fmt) {
     const canvas=$(canvasId), ctx=chartClear(canvas); if(!ctx)return;
+    const {w,h}=canvasSize(canvas);
     if(!data.length||data.every(d=>!d.value))return drawNoData(canvasId);
-    const w=canvas.width,h=canvas.height,padL=58,padR=24,padT=30,padB=54;
+    const padL=54,padR=24,padT=34,padB=70;
     const values=data.map(d=>+d.value||0), max=Math.max(...values,0), min=Math.min(...values,0), span=Math.max(max-min,1);
-    const zeroY = h-padB - ((0-min)/span)*(h-padT-padB);
-    ctx.strokeStyle='#e7edf6'; ctx.lineWidth=1;
-    for(let i=0;i<4;i++){ const y=padT+i*(h-padT-padB)/3; ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(w-padR,y); ctx.stroke(); }
-    ctx.strokeStyle='#cbd7e6'; ctx.beginPath(); ctx.moveTo(padL,zeroY); ctx.lineTo(w-padR,zeroY); ctx.stroke();
-    const slot=(w-padL-padR)/data.length, barW=Math.min(64,slot*.55);
+    for(let i=0;i<4;i++){ const y=padT+i*(h-padT-padB)/3; ctx.strokeStyle='#edf2f8'; ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(w-padR,y); ctx.stroke(); }
+    const zeroY=h-padB-((0-min)/span)*(h-padT-padB);
+    ctx.strokeStyle='#d7e0ec'; ctx.beginPath(); ctx.moveTo(padL,zeroY); ctx.lineTo(w-padR,zeroY); ctx.stroke();
+    const slot=(w-padL-padR)/data.length, barW=Math.min(72,slot*.48);
     data.forEach((d,i)=>{
       const value=+d.value||0, x=padL+i*slot+(slot-barW)/2;
-      const yVal=h-padB-((value-min)/span)*(h-padT-padB), y=Math.min(yVal,zeroY), bh=Math.max(4,Math.abs(zeroY-yVal));
+      const yVal=h-padB-((value-min)/span)*(h-padT-padB), y=Math.min(yVal,zeroY), bh=Math.max(8,Math.abs(zeroY-yVal));
+      ctx.shadowColor='rgba(36,124,255,.18)'; ctx.shadowBlur=16; ctx.shadowOffsetY=8;
       if(value<0){ ctx.fillStyle='#dc315c'; } else { const grad=ctx.createLinearGradient(0,y,0,y+bh); grad.addColorStop(0,'#00c896'); grad.addColorStop(1,'#247cff'); ctx.fillStyle=grad; }
-      roundedRect(ctx,x,y,barW,bh,12); ctx.fill();
-      ctx.fillStyle=value<0?'#dc315c':'#132033'; ctx.font='700 13px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.fillText(formatter(value),x-4,Math.max(18,y-8));
-      ctx.fillStyle='#617086'; ctx.font='12px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.fillText(String(d.label).slice(0,16),x-4,h-22);
+      roundedRect(ctx,x,y,barW,bh,14); ctx.fill(); ctx.shadowBlur=0; ctx.shadowOffsetY=0;
+      drawValueBadge(ctx, formatter(value), x+barW/2, Math.max(22,y-16), value<0);
+      ctx.fillStyle='#7a889a'; ctx.font='700 12px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.textAlign='center';
+      ctx.fillText(String(d.label).slice(0,20),x+barW/2,h-32); ctx.textAlign='left';
     });
   }
-  function drawLineChart(canvasId,data) {
-    const canvas=$(canvasId),ctx=chartClear(canvas); if(!ctx)return; if(data.length<2)return drawNoData(canvasId,t('messages.trendNeed'));
-    const w=canvas.width,h=canvas.height,padL=58,padR=26,padT=32,padB=52;
-    const vals=data.map(d=>+d.value||0), max=Math.max(...vals,1), min=Math.min(...vals,0), range=Math.max(max-min,1);
-    ctx.strokeStyle='#e7edf6'; ctx.lineWidth=1;
-    for(let i=0;i<4;i++){ const y=padT+i*(h-padT-padB)/3; ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(w-padR,y); ctx.stroke(); }
-    const point=(d,i)=>({x:padL+i*((w-padL-padR)/(data.length-1)), y:h-padB-(((+d.value||0)-min)/range)*(h-padT-padB)});
-    const grad=ctx.createLinearGradient(padL,0,w-padR,0); grad.addColorStop(0,'#0bbf8a'); grad.addColorStop(1,'#247cff');
-    ctx.strokeStyle=grad; ctx.lineWidth=4; ctx.lineJoin='round'; ctx.lineCap='round'; ctx.beginPath(); data.forEach((d,i)=>{const p=point(d,i); if(i===0)ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);}); ctx.stroke();
-    data.forEach((d,i)=>{const p=point(d,i); ctx.fillStyle='#fff'; ctx.strokeStyle='#247cff'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(p.x,p.y,6,0,Math.PI*2); ctx.fill(); ctx.stroke(); ctx.fillStyle='#617086'; ctx.font='12px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.fillText(d.label,p.x-18,h-20); if(i===data.length-1||i===0||i%2===0){ ctx.fillStyle=((+d.value||0)<0)?'#dc315c':'#132033'; ctx.font='700 12px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.fillText(fmt(d.value),p.x-22,p.y-14); }});
+  function drawHorizontalBarChart(canvasId,data,formatter=fmt) {
+    const canvas=$(canvasId),ctx=chartClear(canvas); if(!ctx)return;
+    const {w,h}=canvasSize(canvas);
+    const rows=data.filter(d=>Number.isFinite(+d.value)).slice(0,6);
+    if(!rows.length||rows.every(d=>!d.value))return drawNoData(canvasId);
+    const max=Math.max(...rows.map(d=>Math.abs(+d.value||0)),1), padL=150, padR=28, padT=30, rowH=Math.min(42,(h-padT-26)/rows.length);
+    rows.forEach((d,i)=>{
+      const value=+d.value||0, y=padT+i*rowH+8, bw=Math.max(8,Math.abs(value)/max*(w-padL-padR));
+      ctx.fillStyle='#617086'; ctx.font='800 12px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.textAlign='right'; ctx.fillText(String(d.label).slice(0,18),padL-12,y+17);
+      ctx.textAlign='left'; ctx.fillStyle='#eef3f9'; roundedRect(ctx,padL,y,w-padL-padR,22,11); ctx.fill();
+      ctx.fillStyle=value<0?'#dc315c':ctx.createLinearGradient(padL,y,padL+bw,y);
+      if(value>=0){ const grad=ctx.createLinearGradient(padL,y,padL+bw,y); grad.addColorStop(0,'#247cff'); grad.addColorStop(1,'#00c896'); ctx.fillStyle=grad; }
+      roundedRect(ctx,padL,y,bw,22,11); ctx.fill();
+      ctx.fillStyle=value<0?'#dc315c':'#132033'; ctx.font='900 12px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.fillText(formatter(value),padL+bw+8,y+16);
+    });
   }
   function drawPieChart(canvasId, data) {
     const canvas=$(canvasId),ctx=chartClear(canvas); if(!ctx)return;
-    const total=data.reduce((a,b)=>a+(+b.value||0),0); if(!total)return drawNoData(canvasId);
-    const w=canvas.width,h=canvas.height,cx=Math.round(w*.34),cy=Math.round(h*.52),r=Math.min(w,h)*.30,inner=r*.56;
+    const {w,h}=canvasSize(canvas), total=data.reduce((a,b)=>a+(+b.value||0),0); if(!total)return drawNoData(canvasId);
+    const cx=Math.round(w*.34),cy=Math.round(h*.52),r=Math.min(w,h)*.28,inner=r*.62;
     const colors=['#247cff','#0bbf8a','#ffb020','#dc315c','#8b5cf6','#06b6d4']; let start=-Math.PI/2;
-    data.forEach((d,i)=>{ const val=+d.value||0, ang=val/total*Math.PI*2; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,start,start+ang); ctx.closePath(); ctx.fillStyle=colors[i%colors.length]; ctx.fill(); start+=ang; });
-    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(cx,cy,inner,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#132033'; ctx.font='800 24px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.textAlign='center'; ctx.fillText(String(total),cx,cy+6); ctx.font='12px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.fillStyle='#617086'; ctx.fillText(lang==='it'?'prodotti':'items',cx,cy+26); ctx.textAlign='left';
-    let lx=w*.62, ly=58; data.forEach((d,i)=>{ const pctv=(+d.value||0)/total*100; ctx.fillStyle=colors[i%colors.length]; roundedRect(ctx,lx,ly-12,14,14,4); ctx.fill(); ctx.fillStyle='#132033'; ctx.font='700 13px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.fillText(`${d.label}: ${d.value}`,lx+22,ly); ctx.fillStyle='#617086'; ctx.font='12px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.fillText(`${pctv.toFixed(1)}%`,lx+22,ly+17); ly+=46; });
+    ctx.shadowColor='rgba(10,25,47,.13)'; ctx.shadowBlur=16; ctx.shadowOffsetY=8;
+    data.forEach((d,i)=>{ const val=+d.value||0, ang=val/total*Math.PI*2; if(!val) return; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,start,start+ang); ctx.closePath(); ctx.fillStyle=colors[i%colors.length]; ctx.fill(); start+=ang; });
+    ctx.shadowBlur=0; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(cx,cy,inner,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#132033'; ctx.font='900 26px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.textAlign='center'; ctx.fillText(String(total),cx,cy+5); ctx.font='12px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.fillStyle='#617086'; ctx.fillText(lang==='it'?'prodotti':'items',cx,cy+26); ctx.textAlign='left';
+    let lx=w*.62, ly=Math.max(36,h*.22); data.forEach((d,i)=>{ const val=+d.value||0; if(!val) return; const pctv=val/total*100; ctx.fillStyle=colors[i%colors.length]; roundedRect(ctx,lx,ly-11,14,14,4); ctx.fill(); ctx.fillStyle='#132033'; ctx.font='800 12px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.fillText(`${d.label}: ${val}`,lx+22,ly); ctx.fillStyle='#617086'; ctx.font='12px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.fillText(`${pct(pctv)}`,lx+22,ly+16); ly += 40; });
   }
-
+  function drawLineChart(canvasId,data) {
+    const canvas=$(canvasId),ctx=chartClear(canvas); if(!ctx)return;
+    const {w,h}=canvasSize(canvas); if(data.length<2)return drawNoData(canvasId,t('messages.trendNeed'));
+    const padL=54,padR=26,padT=32,padB=56,max=Math.max(...data.map(d=>d.value),1),min=Math.min(...data.map(d=>d.value),0),range=Math.max(max-min,1);
+    for(let i=0;i<4;i++){ const y=padT+i*(h-padT-padB)/3; ctx.strokeStyle='#edf2f8'; ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(w-padR,y); ctx.stroke(); }
+    const point=(d,i)=>({x:padL+i*((w-padL-padR)/(data.length-1)), y:h-padB-((d.value-min)/range)*(h-padT-padB)});
+    const grad=ctx.createLinearGradient(0,padT,0,h-padB); grad.addColorStop(0,'rgba(11,191,138,.30)'); grad.addColorStop(1,'rgba(36,124,255,0)');
+    ctx.beginPath(); data.forEach((d,i)=>{const p=point(d,i); if(i===0)ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);}); ctx.lineTo(w-padR,h-padB); ctx.lineTo(padL,h-padB); ctx.closePath(); ctx.fillStyle=grad; ctx.fill();
+    ctx.strokeStyle='#0bbf8a'; ctx.lineWidth=4; ctx.beginPath(); data.forEach((d,i)=>{const p=point(d,i); if(i===0)ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);}); ctx.stroke();
+    data.forEach((d,i)=>{const p=point(d,i); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(p.x,p.y,7,0,Math.PI*2); ctx.fill(); ctx.strokeStyle=d.value<0?'#dc315c':'#247cff'; ctx.lineWidth=3; ctx.stroke(); ctx.fillStyle='#617086'; ctx.font='700 12px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.textAlign='center'; ctx.fillText(d.label,p.x,h-26); if(i===data.length-1 || d.value===max || d.value===min) drawValueBadge(ctx,fmt(d.value),p.x,Math.max(22,p.y-22),d.value<0); }); ctx.textAlign='left';
+  }
   function renderAnalytics() {
     if(!$('revenueChart'))return;
     updateChartLayout();
@@ -578,14 +619,20 @@
     setMaybe('selectedGrossRevenue', selected.grossRevenue); setMaybe('selectedNetSales', selected.netSales); setMaybe('selectedProfit', selected.profit); setMaybe('selectedCosts', selected.costs);
     setMaybe('deltaGrossRevenue', selected.grossRevenue - compare.grossRevenue); setMaybe('deltaNetSales', selected.netSales - compare.netSales); setMaybe('deltaProfit', selected.profit - compare.profit); setMaybe('deltaCosts', selected.costs - compare.costs);
     setMaybe('avgTicket', selected.avgTicket); setMaybe('avgMarginPct', selected.avgMarginPct, pct); setMaybe('avgProfitPerItem', selected.avgProfitPerItem); if ($('staleStockCount')) $('staleStockCount').textContent = selected.staleStockCount;
+    if ($('soldItemsCount')) $('soldItemsCount').textContent = selected.soldCount;
+    setMaybe('sellThroughSelected', selected.sellThrough, pct);
+    setMaybe('avgRoiSelected', selected.avgRoi, pct);
     const revBars = [{label: lang==='it'?'Periodo lordo':'Selected gross', value:selected.grossRevenue},{label: lang==='it'?'Periodo netto':'Selected net', value:selected.netSales}];
     if (compareRows.length) { revBars.push({label: lang==='it'?'Confr. lordo':'Compare gross', value:compare.grossRevenue},{label: lang==='it'?'Confr. netto':'Compare net', value:compare.netSales}); }
     drawBarChart('revenueChart', revBars);
     const categories=new Map(); selectedRows.forEach(row=>{const cat=categoryKey(row.category), curr=categories.get(cat)||{label:categoryLabel(cat),value:0,count:0,revenue:0}; curr.value += +row.profit || 0; curr.revenue += productSaleValue(row); curr.count += 1; categories.set(cat,curr);});
     const catData=[...categories.values()].sort((a,b)=>b.value-a.value).slice(0,6);
-    drawBarChart('categoryMarginChart',catData);
+    drawHorizontalBarChart('categoryMarginChart',catData);
     const statusData = ['in_stock','listed','sold','archived'].map(k => ({ label: statusLabel(k), value: selectedRows.filter(r => r.status === k).length })).filter(x=>x.value);
     drawPieChart('stockStatusPieChart', statusData);
+    const costCategories = new Map(); selectedRows.forEach(row=>{ const cat=categoryKey(row.category), curr=costCategories.get(cat)||{label:categoryLabel(cat),value:0,count:0}; curr.value += (+row.all_in_cost || +row.purchase_price || 0); curr.count += 1; costCategories.set(cat,curr); });
+    drawHorizontalBarChart('categoryCostChart',[...costCategories.values()].sort((a,b)=>b.value-a.value).slice(0,6));
+    drawBarChart('profitMixChart',[{label: lang==='it'?'Realizzato':'Realized', value:selected.profit},{label: lang==='it'?'Potenziale':'Potential', value:selected.potentialProfit}]);
     renderCategoryRanking(catData);
     const trendYear = $('dashboardYear')?.value || String(new Date().getFullYear());
     const monthly=new Map(); dbCache.filter(r => rowCreatedDate(r).getFullYear() === Number(trendYear)).forEach(row=>{const dt=rowCreatedDate(row), key=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; monthly.set(key,(monthly.get(key)||0)+(+row.profit||0));});
@@ -599,11 +646,50 @@
   async function resetPassword() { const email=session?.user?.email; if(!email)return toast('Email'); const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo: location.origin + location.pathname.replace('app.html','reset-password.html')}); if(error)return toast(error.message); toast(t('messages.resetSent')); }
   function resetCalculator() { ['productName','purchasePrice','purchaseShipping','salePrice','buyerShipping','realShipping','packCost','notes'].forEach(id=>{ if($(id)) $(id).value = id==='productName' ? '' : ''; }); if($('status')) $('status').value='watchlist'; renderCalculation(); }
 
-  function bindAppEvents() {
+  
+  const tutorialSteps = [
+    {target:'[data-app-section="calculator"]', title:'Aggiungi il primo prodotto', text:'Parti dal calcolatore. Clicca “Aggiungi prodotto” o “Calcolatore”.'},
+    {target:'#status', title:'Scegli lo stato corretto', text:'Nel calcolatore puoi scegliere solo “Da valutare” o “In stock”. Per salvare nel database imposta “In stock”.'},
+    {target:'#saveToDb', title:'Salva nello stock', text:'Salva il prodotto nel tuo database personale. Dopo il salvataggio passerai al Database.'},
+    {target:'#dbRows', title:'Porta il prodotto in vendita', text:'Nel Database cambia lo stato del prodotto in “In vendita” e clicca Aggiorna.'},
+    {target:'#dbRows', title:'Registra la vendita', text:'Quando lo stato diventa “Venduto”, inserisci il prezzo reale nel popup. Utile e ROI si aggiornano.'},
+    {target:'[data-app-section="dashboard"]', title:'Leggi la Dashboard', text:'Qui trovi ricavi, vendite nette, margini, stock, categorie e trend. Attiva il confronto solo quando ti serve il Delta.'}
+  ];
+  function startTutorial() { tutorialActive = true; tutorialStep = 0; localStorage.setItem('flipmate_tutorial_seen','1'); showSection('home'); renderTutorialStep(); }
+  function endTutorial() { tutorialActive = false; document.querySelectorAll('.tutorial-highlight').forEach(el=>el.classList.remove('tutorial-highlight')); $('tutorialOverlay')?.classList.add('hidden'); }
+  function advanceTutorial() { if (!tutorialActive) return; tutorialStep += 1; if (tutorialStep >= tutorialSteps.length) return endTutorial(); const s=tutorialSteps[tutorialStep]; if (s.target?.includes('dashboard')) showSection('dashboard'); renderTutorialStep(); }
+  function renderTutorialStep() {
+    if (!tutorialActive) return;
+    document.querySelectorAll('.tutorial-highlight').forEach(el=>el.classList.remove('tutorial-highlight'));
+    const step = tutorialSteps[tutorialStep]; if (!step) return endTutorial();
+    const target = document.querySelector(step.target);
+    if (target) { target.classList.add('tutorial-highlight'); target.scrollIntoView({behavior:'smooth', block:'center'}); }
+    const overlay=$('tutorialOverlay'), pop=$('tutorialPopover'); if(!overlay||!pop) return;
+    $('tutorialStepLabel').textContent = `Tutorial ${tutorialStep+1}/${tutorialSteps.length}`;
+    $('tutorialTitle').textContent = step.title;
+    $('tutorialText').textContent = step.text;
+    overlay.classList.remove('hidden');
+    const r = target?.getBoundingClientRect();
+    if (r && window.innerWidth > 700) {
+      pop.style.position='fixed';
+      pop.style.left = `${Math.min(window.innerWidth-360, Math.max(18, r.right + 18))}px`;
+      pop.style.top = `${Math.min(window.innerHeight-220, Math.max(18, r.top))}px`;
+    } else { pop.style.position='fixed'; pop.style.left='14px'; pop.style.right='14px'; pop.style.bottom='14px'; pop.style.top='auto'; }
+  }
+  function tutorialCheckpoint(eventName) {
+    if (!tutorialActive) return;
+    const map = {calculatorOpened:0,statusInStock:1,productSaved:2,listedDone:3,soldDone:4,dashboardOpened:5};
+    if (map[eventName] === tutorialStep) advanceTutorial();
+  }
+
+function bindAppEvents() {
     const doLogout = async()=>{ await supabase.auth.signOut(); toast(t('messages.logout')); location.href='login.html'; };
     $('logoutBtn')?.addEventListener('click', doLogout); $('accountLogoutBtn')?.addEventListener('click', doLogout);
     $('accountButton')?.addEventListener('click', (e)=>{ e.stopPropagation(); $('accountMenu')?.classList.toggle('hidden'); }); document.addEventListener('click',()=> $('accountMenu')?.classList.add('hidden'));
     $('refreshFeePresets')?.addEventListener('click', async()=>{ await loadMarketplacePresets(true, true); });
+    $('startTutorial')?.addEventListener('click', startTutorial);
+    $('skipTutorial')?.addEventListener('click', endTutorial);
+    $('nextTutorial')?.addEventListener('click', advanceTutorial);
     $('saveToDb')?.addEventListener('click', saveProduct); $('refreshDb')?.addEventListener('click', loadDb); $('exportDbCsv')?.addEventListener('click', exportDbCsv); $('exportSingleCsv')?.addEventListener('click', exportCurrentCsv); $('bulkUpdateStatus')?.addEventListener('click', bulkUpdateStatus);
     $('copySummary')?.addEventListener('click', async()=>{ const c=renderCalculation(); if(!c)return; await navigator.clipboard.writeText(`${c.input.productName}: ${c.out.decision}, ${t('kpi.profit')} ${fmt(c.out.profit)}, ROI ${pct(c.out.roi)}`); toast(t('messages.copied')); });
     $('analysisMode')?.addEventListener('change', applyModeFields); $('savePurpose')?.addEventListener('click', saveProfileSettings); $('saveProfile')?.addEventListener('click', saveProfileSettings); $('changeEmail')?.addEventListener('click', changeEmail); $('resetPassword')?.addEventListener('click', resetPassword); $('resetCalculator')?.addEventListener('click', resetCalculator); $('applyFilters')?.addEventListener('click', applyFilters); $('resetFilters')?.addEventListener('click', resetFilters);
@@ -613,9 +699,11 @@
     ['dashboardYear','dashboardMonth','compareYear','compareMonth','chartLayoutMode','enableComparison'].forEach(id=>{ $(id)?.addEventListener('change', renderAnalytics); });
     $('closeSaleModal')?.addEventListener('click', closeSaleModal); $('cancelSaleUpdate')?.addEventListener('click', closeSaleModal); $('confirmSaleUpdate')?.addEventListener('click', confirmSaleUpdates);
     document.querySelectorAll('#calculatorForm input,#calculatorForm select,#calculatorForm textarea').forEach(el=>{ el.addEventListener('input', renderCalculation); el.addEventListener('change', renderCalculation); });
+    $('status')?.addEventListener('change',()=>{ if (val('status') === 'in_stock') tutorialCheckpoint('statusInStock'); });
     $('profilePurpose')?.addEventListener('change',()=>{ if($('analysisMode')){ $('analysisMode').value=val('profilePurpose'); applyModeFields(); }});
   }
 
+  window.addEventListener('resize',()=>{ if(tutorialActive) renderTutorialStep(); });
   applyTranslations(); bindLanguage();
   if (page === 'landing') landingInit();
   if (page === 'login') authPageInit('login');

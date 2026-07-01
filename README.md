@@ -40,3 +40,13 @@ Campi usati:
 4. Database: seleziona righe e imposta Venduto.
 5. Popup vendita: modifica prezzi e verifica utile live.
 6. Conferma: controlla su Supabase che `sale_price`, `sale_date`, `profit`, `roi` siano aggiornati.
+
+
+## FlipMate V10.1 — Audit UX Fix
+
+Correzioni principali:
+- Calcolatore: stati limitati a "Da valutare" e "In stock".
+- Dashboard: grafici più leggibili, nuove statistiche e due grafici aggiuntivi.
+- Database: mantenuta selezione multipla + popup prezzo venduto.
+- Tutorial interattivo sintetico: primo prodotto, messa in vendita, vendita, dashboard.
+- Mobile: navigazione più compatta, KPI scrollabili e layout più leggibile.
