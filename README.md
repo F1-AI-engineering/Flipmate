@@ -50,3 +50,10 @@ Correzioni principali:
 - Database: mantenuta selezione multipla + popup prezzo venduto.
 - Tutorial interattivo sintetico: primo prodotto, messa in vendita, vendita, dashboard.
 - Mobile: navigazione più compatta, KPI scrollabili e layout più leggibile.
+
+
+## FlipMate V10.2 — correzione grafici e tutorial
+
+- Rimosse ombre dai grafici.
+- Tutorial reso action-driven: non c'è più il bottone "Avanti".
+- Il tutorial prosegue solo quando l'utente compie l'azione richiesta.

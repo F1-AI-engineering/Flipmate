@@ -556,9 +556,8 @@
     data.forEach((d,i)=>{
       const value=+d.value||0, x=padL+i*slot+(slot-barW)/2;
       const yVal=h-padB-((value-min)/span)*(h-padT-padB), y=Math.min(yVal,zeroY), bh=Math.max(8,Math.abs(zeroY-yVal));
-      ctx.shadowColor='rgba(36,124,255,.18)'; ctx.shadowBlur=16; ctx.shadowOffsetY=8;
       if(value<0){ ctx.fillStyle='#dc315c'; } else { const grad=ctx.createLinearGradient(0,y,0,y+bh); grad.addColorStop(0,'#00c896'); grad.addColorStop(1,'#247cff'); ctx.fillStyle=grad; }
-      roundedRect(ctx,x,y,barW,bh,14); ctx.fill(); ctx.shadowBlur=0; ctx.shadowOffsetY=0;
+      roundedRect(ctx,x,y,barW,bh,14); ctx.fill();
       drawValueBadge(ctx, formatter(value), x+barW/2, Math.max(22,y-16), value<0);
       ctx.fillStyle='#7a889a'; ctx.font='700 12px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.textAlign='center';
       ctx.fillText(String(d.label).slice(0,20),x+barW/2,h-32); ctx.textAlign='left';
@@ -585,9 +584,8 @@
     const {w,h}=canvasSize(canvas), total=data.reduce((a,b)=>a+(+b.value||0),0); if(!total)return drawNoData(canvasId);
     const cx=Math.round(w*.34),cy=Math.round(h*.52),r=Math.min(w,h)*.28,inner=r*.62;
     const colors=['#247cff','#0bbf8a','#ffb020','#dc315c','#8b5cf6','#06b6d4']; let start=-Math.PI/2;
-    ctx.shadowColor='rgba(10,25,47,.13)'; ctx.shadowBlur=16; ctx.shadowOffsetY=8;
     data.forEach((d,i)=>{ const val=+d.value||0, ang=val/total*Math.PI*2; if(!val) return; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,start,start+ang); ctx.closePath(); ctx.fillStyle=colors[i%colors.length]; ctx.fill(); start+=ang; });
-    ctx.shadowBlur=0; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(cx,cy,inner,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(cx,cy,inner,0,Math.PI*2); ctx.fill();
     ctx.fillStyle='#132033'; ctx.font='900 26px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.textAlign='center'; ctx.fillText(String(total),cx,cy+5); ctx.font='12px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.fillStyle='#617086'; ctx.fillText(lang==='it'?'prodotti':'items',cx,cy+26); ctx.textAlign='left';
     let lx=w*.62, ly=Math.max(36,h*.22); data.forEach((d,i)=>{ const val=+d.value||0; if(!val) return; const pctv=val/total*100; ctx.fillStyle=colors[i%colors.length]; roundedRect(ctx,lx,ly-11,14,14,4); ctx.fill(); ctx.fillStyle='#132033'; ctx.font='800 12px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.fillText(`${d.label}: ${val}`,lx+22,ly); ctx.fillStyle='#617086'; ctx.font='12px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.fillText(`${pct(pctv)}`,lx+22,ly+16); ly += 40; });
   }
@@ -689,7 +687,7 @@ function bindAppEvents() {
     $('refreshFeePresets')?.addEventListener('click', async()=>{ await loadMarketplacePresets(true, true); });
     $('startTutorial')?.addEventListener('click', startTutorial);
     $('skipTutorial')?.addEventListener('click', endTutorial);
-    $('nextTutorial')?.addEventListener('click', advanceTutorial);
+    
     $('saveToDb')?.addEventListener('click', saveProduct); $('refreshDb')?.addEventListener('click', loadDb); $('exportDbCsv')?.addEventListener('click', exportDbCsv); $('exportSingleCsv')?.addEventListener('click', exportCurrentCsv); $('bulkUpdateStatus')?.addEventListener('click', bulkUpdateStatus);
     $('copySummary')?.addEventListener('click', async()=>{ const c=renderCalculation(); if(!c)return; await navigator.clipboard.writeText(`${c.input.productName}: ${c.out.decision}, ${t('kpi.profit')} ${fmt(c.out.profit)}, ROI ${pct(c.out.roi)}`); toast(t('messages.copied')); });
     $('analysisMode')?.addEventListener('change', applyModeFields); $('savePurpose')?.addEventListener('click', saveProfileSettings); $('saveProfile')?.addEventListener('click', saveProfileSettings); $('changeEmail')?.addEventListener('click', changeEmail); $('resetPassword')?.addEventListener('click', resetPassword); $('resetCalculator')?.addEventListener('click', resetCalculator); $('applyFilters')?.addEventListener('click', applyFilters); $('resetFilters')?.addEventListener('click', resetFilters);

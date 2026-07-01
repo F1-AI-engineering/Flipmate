@@ -74,3 +74,22 @@
   .tutorial-popover{left:10px!important;right:10px!important;bottom:10px!important;top:auto!important;width:auto}
   .modal-card{padding:14px}.sale-modal-table{min-width:820px}
 }
+
+
+/* --- V10.2: no chart shadows, action-driven tutorial --- */
+.chart-card,
+.chart-card canvas {
+  box-shadow: none !important;
+}
+.chart-card canvas {
+  border: 1px solid var(--line);
+}
+.tutorial-action-hint {
+  margin: 0 0 12px;
+  color: var(--primary2);
+  font-size: 13px;
+  font-weight: 800;
+}
+.tutorial-actions {
+  justify-content: flex-start;
+}
