@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Registrati — FlipMate</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#081426" />
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="signup">
+  <header class="topbar">
+    <a class="brand-row" href="index.html"><img src="assets/logo.svg" alt="FlipMate logo" /><span>FlipMate</span></a>
+    <nav class="topnav">
+      <a class="btn ghost" href="index.html" data-i18n="nav.home">Home</a>
+      <a class="btn primary" href="login.html" data-i18n="nav.login">Accedi</a>
+      <label class="lang-picker"><span data-i18n="common.lang">Lingua</span><select id="languageSelect"><option value="it">IT</option><option value="en">EN</option></select></label>
+    </nav>
+  </header>
+  <main class="auth-page">
+    <section class="auth-card card">
+      <span class="eyebrow" data-i18n="auth.signupEyebrow">Registrazione gratuita</span>
+      <h1 data-i18n="auth.signupTitle">Crea il tuo spazio stock e vendite</h1>
+      <p class="muted" id="signupPendingText" data-i18n="auth.signupText">Dopo la registrazione vedrai il risultato della prova e potrai salvare prodotti nel database.</p>
+      <form class="form-grid single" id="signupForm">
+        <label><span data-i18n="fields.username">Nome utente</span><input id="signupUsername" type="text" autocomplete="nickname" placeholder="AleResell" /></label>
+        <label><span data-i18n="fields.purpose">Finalità</span>
+          <select id="signupPurpose" data-mode-select>
+            <option value="vinted">Solo Vinted</option>
+            <option value="ebay">Solo eBay</option>
+            <option value="vinted_ebay" selected>Vinted + eBay</option>
+          </select>
+        </label>
+        <label><span data-i18n="fields.email">Email</span><input id="signupEmail" type="email" autocomplete="email" required /></label>
+        <label><span data-i18n="fields.password">Password</span><input id="signupPassword" type="password" autocomplete="new-password" minlength="8" required /></label>
+      </form>
+      <div class="actions-row wrap">
+        <button class="btn primary" id="signupSubmit" data-i18n="nav.signup">Registrati</button>
+        <a class="btn ghost" href="login.html" data-i18n="auth.haveAccount">Hai già un account?</a>
+      </div>
+      <p class="fineprint" data-i18n="auth.passwordNote">Le password sono gestite da Supabase Auth. FlipMate non salva password nel database prodotti.</p>
+    </section>
+  </main>
+  <div id="toast" class="toast hidden"></div>
+  <script src="supabase-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
+  <script src="app.js"></script>
+</body>
+</html>

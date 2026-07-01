@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Accedi — FlipMate</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#081426" />
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="login">
+  <header class="topbar">
+    <a class="brand-row" href="index.html"><img src="assets/logo.svg" alt="FlipMate logo" /><span>FlipMate</span></a>
+    <nav class="topnav">
+      <a class="btn ghost" href="index.html" data-i18n="nav.home">Home</a>
+      <a class="btn primary" href="signup.html" data-i18n="nav.signup">Registrati</a>
+      <label class="lang-picker"><span data-i18n="common.lang">Lingua</span><select id="languageSelect"><option value="it">IT</option><option value="en">EN</option></select></label>
+    </nav>
+  </header>
+  <main class="auth-page">
+    <section class="auth-card card">
+      <span class="eyebrow" data-i18n="auth.loginEyebrow">Accesso</span>
+      <h1 data-i18n="auth.loginTitle">Accedi al tuo database FlipMate</h1>
+      <p class="muted" data-i18n="auth.loginText">Entra per gestire stock, vendite, dashboard ed export CSV.</p>
+      <form class="form-grid single" id="loginForm">
+        <label><span data-i18n="fields.email">Email</span><input id="loginEmail" type="email" autocomplete="email" required /></label>
+        <label><span data-i18n="fields.password">Password</span><input id="loginPassword" type="password" autocomplete="current-password" required /></label>
+      </form>
+      <div class="actions-row wrap">
+        <button class="btn primary" id="loginSubmit" data-i18n="nav.login">Accedi</button>
+        <a class="btn ghost" href="signup.html" data-i18n="auth.noAccount">Non hai un account?</a>
+      </div>
+      <button class="link-button" id="loginResetPassword" data-i18n="auth.forgotPassword">Password dimenticata?</button>
+    </section>
+  </main>
+  <div id="toast" class="toast hidden"></div>
+  <script src="supabase-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
+  <script src="app.js"></script>
+</body>
+</html>

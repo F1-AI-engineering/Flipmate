@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FlipMate App — Database, stock e margini</title>
   <meta name="robots" content="noindex, nofollow" />
-  <meta name="theme-color" content="#07111f" />
+  <meta name="theme-color" content="#081426" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="styles.css" />
@@ -16,141 +16,129 @@
       <img src="assets/logo.svg" alt="FlipMate logo" />
       <span>FlipMate</span>
     </a>
-    <nav class="topnav app-nav" aria-label="Navigazione app">
-      <button class="btn ghost" data-app-section="calculator">Calcolatore</button>
-      <button class="btn ghost" data-app-section="database">Database</button>
-      <button class="btn ghost" data-app-section="dashboard">Dashboard</button>
-      <button class="btn ghost" data-app-section="settings">Impostazioni</button>
-      <button class="btn primary hidden" id="accountButton">Account</button>
+    <nav class="topnav app-nav" aria-label="App navigation">
+      <button class="btn ghost" data-app-section="home" data-i18n="app.navHome">Home</button>
+      <button class="btn ghost" data-app-section="calculator" data-i18n="app.navCalculator">Calcolatore</button>
+      <button class="btn ghost" data-app-section="database" data-i18n="app.navDatabase">Database</button>
+      <button class="btn ghost" data-app-section="dashboard" data-i18n="app.navDashboard">Dashboard</button>
+      <button class="btn ghost" data-app-section="settings" data-i18n="app.navSettings">Impostazioni</button>
+      <label class="lang-picker compact-lang"><span data-i18n="common.lang">Lingua</span><select id="languageSelect"><option value="it">IT</option><option value="en">EN</option></select></label>
+      <button class="btn primary" id="accountButton">Account</button>
     </nav>
   </header>
 
   <main>
-    <section id="authGate" class="section auth-gate hidden">
-      <div class="grid two calc-layout">
-        <article class="card">
-          <span class="eyebrow">Accesso richiesto</span>
-          <h1>Registrati gratis per vedere il risultato e salvare il database.</h1>
-          <p>La pagina app è separata dalla landing. Qui trovi calcolatore completo, stock tracker, dashboard, export CSV e impostazioni account.</p>
-          <form id="authForm" class="form-grid single">
-            <label>Nome utente<input id="authUsername" type="text" placeholder="es. AleResell" /></label>
-            <label>Finalità
-              <select id="authPurpose">
-                <option value="vinted">Solo Vinted</option>
-                <option value="ebay">Solo eBay</option>
-                <option value="vinted_ebay" selected>Vinted + eBay</option>
-              </select>
-            </label>
-            <label>Email<input id="authEmail" type="email" placeholder="nome@email.com" required /></label>
-            <label>Password<input id="authPassword" type="password" minlength="8" placeholder="Minimo 8 caratteri" required /></label>
-          </form>
-          <div class="actions-row wrap">
-            <button class="btn primary" id="signupBtn" type="button">Registrati gratis</button>
-            <button class="btn" id="loginBtn" type="button">Accedi</button>
-            <a class="btn ghost" href="index.html">Torna alla prova</a>
-          </div>
-          <p class="fineprint">Le password sono gestite da Supabase Auth. Non salvare mai password nel database prodotti.</p>
-        </article>
-        <article class="card locked-result-card">
-          <div class="lock-icon">🔒</div>
-          <h3 id="pendingTitle">Nessun calcolo in attesa</h3>
-          <p id="pendingText">Arriva qui dalla landing con “Prova gratis” oppure accedi direttamente al tuo database.</p>
-        </article>
-      </div>
-    </section>
-
-    <section id="appShell" class="section hidden">
+    <section id="appShell" class="section">
       <div class="app-header-card card">
         <div>
-          <span class="eyebrow">Area app</span>
+          <span class="eyebrow" data-i18n="app.areaEyebrow">Area app</span>
           <h1 id="welcomeTitle">Benvenuto in FlipMate</h1>
           <p id="accountStatus">Caricamento account...</p>
         </div>
         <div class="mode-box">
-          <label>Finalità operativa
-            <select id="profilePurpose">
+          <label><span data-i18n="fields.purpose">Finalità operativa</span>
+            <select id="profilePurpose" data-mode-select>
               <option value="vinted">Solo Vinted</option>
               <option value="ebay">Solo eBay</option>
               <option value="vinted_ebay">Vinted + eBay</option>
             </select>
           </label>
-          <button class="btn small" id="savePurpose">Salva finalità</button>
+          <button class="btn small" id="savePurpose" data-i18n="app.savePurpose">Salva finalità</button>
         </div>
       </div>
 
-      <section id="calculatorSection" class="app-section">
+      <div class="global-kpis kpi-grid compact-kpis" aria-label="Global KPIs">
+        <article class="kpi"><span data-i18n="kpi.stockPieces">Pezzi in stock</span><strong data-kpi="stockPieces">0</strong></article>
+        <article class="kpi"><span data-i18n="kpi.costs">Costi sostenuti</span><strong data-kpi="costs">€0,00</strong></article>
+        <article class="kpi"><span data-i18n="kpi.probableSales">Vendita probabile</span><strong data-kpi="probableSales">€0,00</strong></article>
+        <article class="kpi"><span data-i18n="kpi.netSales">Vendita netta</span><strong data-kpi="netSales">€0,00</strong></article>
+        <article class="kpi"><span data-i18n="kpi.profit">Utile</span><strong data-kpi="profit">€0,00</strong></article>
+      </div>
+
+      <section id="homeSection" class="app-section">
+        <div class="section-heading left app-section-heading">
+          <span class="eyebrow" data-i18n="app.navHome">Home</span>
+          <h2 data-i18n="home.title">Panoramica rapida</h2>
+          <p data-i18n="home.subtitle">Le caselle mostrano stock, costi, vendita probabile, vendita netta e utile. I grafici completi sono nella Dashboard.</p>
+        </div>
+        <div class="kpi-grid home-kpis">
+          <article class="kpi big-kpi"><span data-i18n="kpi.stockPieces">Pezzi in stock</span><strong data-kpi="stockPieces">0</strong></article>
+          <article class="kpi big-kpi"><span data-i18n="kpi.costs">Costi sostenuti</span><strong data-kpi="costs">€0,00</strong></article>
+          <article class="kpi big-kpi"><span data-i18n="kpi.probableSales">Vendita probabile</span><strong data-kpi="probableSales">€0,00</strong></article>
+          <article class="kpi big-kpi"><span data-i18n="kpi.netSales">Vendita netta</span><strong data-kpi="netSales">€0,00</strong></article>
+          <article class="kpi big-kpi"><span data-i18n="kpi.profit">Utile</span><strong data-kpi="profit">€0,00</strong></article>
+        </div>
+        <div class="actions-row wrap home-actions">
+          <button class="btn primary" data-app-section="calculator" data-i18n="home.addProduct">Aggiungi prodotto</button>
+          <button class="btn ghost" data-app-section="database" data-i18n="home.openDb">Apri database</button>
+          <button class="btn ghost" data-app-section="dashboard" data-i18n="home.openDashboard">Vai alla dashboard</button>
+        </div>
+      </section>
+
+      <section id="calculatorSection" class="app-section hidden">
         <div class="grid two calc-layout">
           <article class="card">
             <div class="card-header">
-              <div><span class="eyebrow">Calcolatore</span><h3>Analisi prodotto</h3></div>
-              <button class="btn small" id="resetCalculator">Reset</button>
+              <div><span class="eyebrow" data-i18n="app.navCalculator">Calcolatore</span><h3 data-i18n="calc.title">Analisi prodotto</h3></div>
+              <button class="btn small" id="resetCalculator" data-i18n="common.reset">Reset</button>
             </div>
             <form id="calculatorForm" class="form-grid">
-              <label>Modalità analisi
-                <select id="analysisMode">
+              <label><span data-i18n="fields.analysisMode">Modalità analisi</span>
+                <select id="analysisMode" data-mode-select>
                   <option value="vinted">Solo Vinted</option>
                   <option value="ebay">Solo eBay</option>
                   <option value="vinted_ebay">Vinted + eBay</option>
                 </select>
               </label>
-              <label>Nome prodotto<input id="productName" type="text" value="Banpresto figure" required /></label>
-              <label>Categoria
-                <select id="category">
-                  <option>Action figure</option>
-                  <option>LEGO</option>
-                  <option>Carte collezionabili</option>
-                  <option>Videogiochi</option>
-                  <option>Manga e artbook</option>
-                  <option>Altro</option>
-                </select>
-              </label>
-              <label>Stato
-                <select id="status">
+              <label><span data-i18n="fields.productName">Nome prodotto</span><input id="productName" type="text" value="Banpresto figure" required /></label>
+              <label><span data-i18n="fields.category">Categoria</span><select id="category" data-category-select></select></label>
+              <label><span data-i18n="fields.status">Stato</span>
+                <select id="status" data-status-select-basic>
                   <option value="watchlist">Da valutare</option>
                   <option value="in_stock">In stock</option>
                   <option value="listed">In vendita</option>
                   <option value="sold">Venduto</option>
                   <option value="archived">Archiviato</option>
                 </select>
-                <small class="field-hint">Per salvare nel DB devi impostare lo stato su <strong>In stock</strong>. Gli altri stati si aggiornano dal Database.</small>
+                <small class="field-hint" data-i18n="calc.stockHint">Per salvare nel DB devi impostare lo stato su In stock. Gli altri stati si aggiornano dal Database.</small>
               </label>
-              <label>Prezzo acquisto<input id="purchasePrice" type="number" min="0" step="0.01" value="20" /></label>
-              <label>Spedizione acquisto<input id="purchaseShipping" type="number" min="0" step="0.01" value="4" /></label>
-              <label data-mode-field="vintedBuy">Protezione Vinted %<input id="vintedPct" type="number" min="0" step="0.01" value="5" /></label>
-              <label data-mode-field="vintedBuy">Protezione Vinted fissa €<input id="vintedFixed" type="number" min="0" step="0.01" value="0.70" /></label>
-              <label>Prezzo vendita stimato<input id="salePrice" type="number" min="0" step="0.01" value="40" /></label>
-              <label data-mode-field="ebaySell">Spedizione pagata dal buyer<input id="buyerShipping" type="number" min="0" step="0.01" value="6.5" /></label>
-              <label>Spedizione reale tua<input id="realShipping" type="number" min="0" step="0.01" value="5.2" /></label>
-              <label>Costo imballo<input id="packCost" type="number" min="0" step="0.01" value="0.5" /></label>
-              <label data-mode-field="ebaySell">Commissione eBay %<input id="ebayFeePct" type="number" min="0" step="0.01" value="5" /></label>
-              <label data-mode-field="ebaySell">Tariffa regolatoria %<input id="regPct" type="number" min="0" step="0.01" value="0.43" /></label>
-              <label data-mode-field="ebaySell">Fee fissa eBay €<input id="ebayFixed" type="number" min="0" step="0.01" value="0.35" /></label>
-              <label class="premium-lock">ROI target <span>Premium</span><input id="targetRoi" value="25%" disabled /></label>
-              <label class="premium-lock">Utile minimo <span>Premium</span><input id="minProfit" value="10 €" disabled /></label>
-              <label>Note<textarea id="notes" rows="3" placeholder="Condizione, scatola, link annuncio..."></textarea></label>
+              <label><span data-i18n="fields.purchasePrice">Prezzo acquisto</span><input id="purchasePrice" type="number" min="0" step="0.01" value="20" /></label>
+              <label><span data-i18n="fields.purchaseShipping">Spedizione acquisto</span><input id="purchaseShipping" type="number" min="0" step="0.01" value="4" /></label>
+              <label data-mode-field="vintedBuy"><span data-i18n="fields.vintedPct">Protezione Vinted %</span><input id="vintedPct" type="number" min="0" step="0.01" value="5" /></label>
+              <label data-mode-field="vintedBuy"><span data-i18n="fields.vintedFixed">Protezione Vinted fissa €</span><input id="vintedFixed" type="number" min="0" step="0.01" value="0.70" /></label>
+              <label><span data-i18n="fields.salePrice">Prezzo vendita stimato</span><input id="salePrice" type="number" min="0" step="0.01" value="40" /></label>
+              <label data-mode-field="ebaySell"><span data-i18n="fields.buyerShipping">Spedizione pagata dal buyer</span><input id="buyerShipping" type="number" min="0" step="0.01" value="6.5" /></label>
+              <label><span data-i18n="fields.realShipping">Spedizione reale tua</span><input id="realShipping" type="number" min="0" step="0.01" value="5.2" /></label>
+              <label><span data-i18n="fields.packCost">Costo imballo</span><input id="packCost" type="number" min="0" step="0.01" value="0.5" /></label>
+              <label data-mode-field="ebaySell"><span data-i18n="fields.ebayFeePct">Commissione eBay %</span><input id="ebayFeePct" type="number" min="0" step="0.01" value="5" /></label>
+              <label data-mode-field="ebaySell"><span data-i18n="fields.regPct">Tariffa regolatoria %</span><input id="regPct" type="number" min="0" step="0.01" value="0.43" /></label>
+              <label data-mode-field="ebaySell"><span data-i18n="fields.ebayFixed">Fee fissa eBay €</span><input id="ebayFixed" type="number" min="0" step="0.01" value="0.35" /></label>
+              <label class="premium-lock"><span data-i18n="fields.targetRoi">ROI target</span><em>Premium</em><input id="targetRoi" value="25%" disabled /></label>
+              <label class="premium-lock"><span data-i18n="fields.minProfit">Utile minimo</span><em>Premium</em><input id="minProfit" value="10 €" disabled /></label>
+              <label><span data-i18n="fields.notes">Note</span><textarea id="notes" rows="3" placeholder="Condizione, scatola, link annuncio..."></textarea></label>
             </form>
             <div class="actions-row wrap">
-              <button class="btn primary" id="saveToDb">Salva nel DB</button>
-              <button class="btn" id="copySummary">Copia sintesi</button>
-              <button class="btn ghost" id="exportSingleCsv">Scarica CSV prodotto</button>
+              <button class="btn primary" id="saveToDb" data-i18n="calc.saveToDb">Salva nel DB</button>
+              <button class="btn" id="copySummary" data-i18n="calc.copySummary">Copia sintesi</button>
+              <button class="btn ghost" id="exportSingleCsv" data-i18n="calc.singleCsv">Scarica CSV prodotto</button>
             </div>
           </article>
 
           <article class="card result-card">
             <div class="verdict" id="verdictBox">
-              <span>Decisione</span>
+              <span data-i18n="calc.decision">Decisione</span>
               <strong id="decision">—</strong>
               <p id="decisionReason">Inserisci i dati per calcolare.</p>
             </div>
             <div class="result-grid">
-              <div><span>Costo all-in</span><strong id="outAllIn">€0,00</strong></div>
-              <div><span>Prezzo prudente</span><strong id="outFair">€0,00</strong></div>
-              <div><span>Prezzo annuncio</span><strong id="outListing">€0,00</strong></div>
-              <div><span>Offerta minima</span><strong id="outMinOffer">€0,00</strong></div>
-              <div><span>Break-even</span><strong id="outBreakEven">€0,00</strong></div>
-              <div><span>Max prezzo acquisto</span><strong id="outMaxBuy">€0,00</strong></div>
-              <div><span>Utile netto stimato</span><strong id="outProfit">€0,00</strong></div>
-              <div><span>ROI stimato</span><strong id="outRoi">0%</strong></div>
+              <div><span data-i18n="calc.allIn">Costo all-in</span><strong id="outAllIn">€0,00</strong></div>
+              <div><span data-i18n="calc.fair">Prezzo prudente</span><strong id="outFair">€0,00</strong></div>
+              <div><span data-i18n="calc.listing">Prezzo annuncio</span><strong id="outListing">€0,00</strong></div>
+              <div><span data-i18n="calc.minOffer">Offerta minima</span><strong id="outMinOffer">€0,00</strong></div>
+              <div><span data-i18n="calc.breakEven">Break-even</span><strong id="outBreakEven">€0,00</strong></div>
+              <div><span data-i18n="calc.maxBuy">Max prezzo acquisto</span><strong id="outMaxBuy">€0,00</strong></div>
+              <div><span data-i18n="calc.profit">Utile netto stimato</span><strong id="outProfit">€0,00</strong></div>
+              <div><span data-i18n="calc.roi">ROI stimato</span><strong id="outRoi">0%</strong></div>
             </div>
           </article>
         </div>
@@ -159,60 +147,48 @@
       <section id="databaseSection" class="app-section hidden">
         <article class="card">
           <div class="card-header">
-            <div><span class="eyebrow">Database</span><h3>Stock e vendite</h3></div>
+            <div><span class="eyebrow" data-i18n="app.navDatabase">Database</span><h3 data-i18n="db.title">Stock e vendite</h3></div>
             <div class="actions-row wrap compact">
-              <button class="btn small" id="refreshDb">Aggiorna</button>
-              <button class="btn small ghost" id="exportDbCsv">Export CSV filtrato</button>
+              <button class="btn small" id="refreshDb" data-i18n="common.refresh">Aggiorna</button>
+              <button class="btn small ghost" id="exportDbCsv" data-i18n="db.exportFiltered">Export CSV filtrato</button>
             </div>
           </div>
 
           <div class="filters-panel">
             <div class="form-grid filters-grid">
-              <label>Modalità
-                <select id="filterMode">
-                  <option value="all">Tutte</option>
-                  <option value="vinted">Solo Vinted</option>
-                  <option value="ebay">Solo eBay</option>
-                  <option value="vinted_ebay">Vinted + eBay</option>
-                </select>
-              </label>
-              <label>Categoria
-                <select id="filterCategory">
-                  <option value="all">Tutte</option>
-                  <option>Action figure</option>
-                  <option>LEGO</option>
-                  <option>Carte collezionabili</option>
-                  <option>Videogiochi</option>
-                  <option>Manga e artbook</option>
-                  <option>Altro</option>
-                </select>
-              </label>
-              <label>Stato
-                <select id="filterStatus">
-                  <option value="all">Tutti</option>
-                  <option value="in_stock">In stock</option>
-                  <option value="listed">In vendita</option>
-                  <option value="sold">Venduto</option>
-                  <option value="archived">Archiviato</option>
-                </select>
-              </label>
-              <label>Prezzo vendita min<input id="filterSaleMin" type="number" min="0" step="0.01" placeholder="0" /></label>
-              <label>Prezzo vendita max<input id="filterSaleMax" type="number" min="0" step="0.01" placeholder="9999" /></label>
-              <label>Utile min<input id="filterProfitMin" type="number" step="0.01" placeholder="-999" /></label>
-              <label>Utile max<input id="filterProfitMax" type="number" step="0.01" placeholder="9999" /></label>
-              <label>Costo acquisto min<input id="filterCostMin" type="number" min="0" step="0.01" placeholder="0" /></label>
-              <label>Costo acquisto max<input id="filterCostMax" type="number" min="0" step="0.01" placeholder="9999" /></label>
+              <label><span data-i18n="fields.mode">Modalità</span><select id="filterMode" data-mode-select-filter><option value="all">Tutte</option><option value="vinted">Solo Vinted</option><option value="ebay">Solo eBay</option><option value="vinted_ebay">Vinted + eBay</option></select></label>
+              <label><span data-i18n="fields.category">Categoria</span><select id="filterCategory" data-category-filter><option value="all">Tutte</option></select></label>
+              <label><span data-i18n="fields.status">Stato</span><select id="filterStatus" data-status-filter><option value="all">Tutti</option><option value="in_stock">In stock</option><option value="listed">In vendita</option><option value="sold">Venduto</option><option value="archived">Archiviato</option></select></label>
+              <label><span data-i18n="db.saleMin">Prezzo vendita min</span><input id="filterSaleMin" type="number" min="0" step="0.01" placeholder="0" /></label>
+              <label><span data-i18n="db.saleMax">Prezzo vendita max</span><input id="filterSaleMax" type="number" min="0" step="0.01" placeholder="9999" /></label>
+              <label><span data-i18n="db.profitMin">Utile min</span><input id="filterProfitMin" type="number" step="0.01" placeholder="-999" /></label>
+              <label><span data-i18n="db.profitMax">Utile max</span><input id="filterProfitMax" type="number" step="0.01" placeholder="9999" /></label>
+              <label><span data-i18n="db.costMin">Costo acquisto min</span><input id="filterCostMin" type="number" min="0" step="0.01" placeholder="0" /></label>
+              <label><span data-i18n="db.costMax">Costo acquisto max</span><input id="filterCostMax" type="number" min="0" step="0.01" placeholder="9999" /></label>
             </div>
             <div class="actions-row wrap compact filters-actions">
-              <button class="btn small primary" id="applyFilters">Applica filtri</button>
-              <button class="btn small ghost" id="resetFilters">Reset filtri</button>
+              <button class="btn small primary" id="applyFilters" data-i18n="db.applyFilters">Applica filtri</button>
+              <button class="btn small ghost" id="resetFilters" data-i18n="db.resetFilters">Reset filtri</button>
               <span class="filter-count" id="filterCount">0 prodotti visualizzati</span>
             </div>
           </div>
 
+          <div class="bulk-panel">
+            <label><span data-i18n="db.bulkStatus">Imposta stato su prodotti filtrati</span>
+              <select id="bulkStatus" data-status-select-basic>
+                <option value="in_stock">In stock</option>
+                <option value="listed">In vendita</option>
+                <option value="sold">Venduto</option>
+                <option value="archived">Archiviato</option>
+              </select>
+            </label>
+            <button class="btn primary small" id="bulkUpdateStatus" data-i18n="db.updateAll">Aggiorna tutto</button>
+            <p class="fineprint" data-i18n="db.bulkNote">Aggiorna solo i prodotti visualizzati dai filtri attuali.</p>
+          </div>
+
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Data</th><th>Prodotto</th><th>Modalità</th><th>Categoria</th><th>Stato</th><th>Costo acquisto</th><th>Prezzo vendita</th><th>Utile</th><th>ROI</th><th>Decisione</th><th>Azioni</th></tr></thead>
+              <thead><tr><th data-i18n="db.date">Data</th><th data-i18n="db.product">Prodotto</th><th data-i18n="db.mode">Modalità</th><th data-i18n="db.category">Categoria</th><th data-i18n="db.status">Stato</th><th data-i18n="db.cost">Costo acquisto</th><th data-i18n="db.sale">Prezzo vendita</th><th data-i18n="db.profit">Utile</th><th>ROI</th><th data-i18n="db.decision">Decisione</th><th data-i18n="db.actions">Azioni</th></tr></thead>
               <tbody id="dbRows"></tbody>
             </table>
           </div>
@@ -220,60 +196,53 @@
       </section>
 
       <section id="dashboardSection" class="app-section hidden">
-        <div class="kpi-grid">
-          <article class="kpi"><span>Pezzi salvati</span><strong id="kpiItems">0</strong></article>
-          <article class="kpi"><span>In stock / listed</span><strong id="kpiStock">0</strong></article>
-          <article class="kpi"><span>Utile stimato</span><strong id="kpiProfit">€0,00</strong></article>
-          <article class="kpi"><span>ROI medio</span><strong id="kpiRoi">0%</strong></article>
-          <article class="kpi premium-kpi"><span>Ricavi lordi venduti</span><strong id="kpiGrossRevenue">€0,00</strong></article>
-          <article class="kpi premium-kpi"><span>Vendita netta</span><strong id="kpiNetSales">€0,00</strong></article>
-          <article class="kpi premium-kpi"><span>Categoria top margine</span><strong id="kpiTopCategory">—</strong></article>
-          <article class="kpi premium-kpi"><span>Sell-through</span><strong id="kpiSellThrough">0%</strong></article>
+        <div class="section-heading left app-section-heading">
+          <span class="eyebrow" data-i18n="app.navDashboard">Dashboard</span>
+          <h2 data-i18n="dashboard.title">Analytics approfondite</h2>
+          <p data-i18n="dashboard.subtitle">Caselle KPI + grafici per ricavi lordi, vendita netta, margini categoria e trend utile.</p>
+        </div>
+        <div class="kpi-grid dashboard-kpis">
+          <article class="kpi"><span data-i18n="kpi.stockPieces">Pezzi in stock</span><strong data-kpi="stockPieces">0</strong></article>
+          <article class="kpi"><span data-i18n="kpi.costs">Costi sostenuti</span><strong data-kpi="costs">€0,00</strong></article>
+          <article class="kpi"><span data-i18n="kpi.probableSales">Vendita probabile</span><strong data-kpi="probableSales">€0,00</strong></article>
+          <article class="kpi"><span data-i18n="kpi.netSales">Vendita netta</span><strong data-kpi="netSales">€0,00</strong></article>
+          <article class="kpi"><span data-i18n="kpi.profit">Utile</span><strong data-kpi="profit">€0,00</strong></article>
+          <article class="kpi premium-kpi"><span data-i18n="kpi.grossRevenue">Ricavi lordi venduti</span><strong data-kpi="grossRevenue">€0,00</strong></article>
+          <article class="kpi premium-kpi"><span data-i18n="kpi.topCategory">Categoria top margine</span><strong data-kpi="topCategory">—</strong></article>
+          <article class="kpi premium-kpi"><span data-i18n="kpi.sellThrough">Sell-through</span><strong data-kpi="sellThrough">0%</strong></article>
         </div>
 
         <div class="grid two analytics-grid">
-          <article class="card chart-card">
-            <div class="card-header"><div><span class="eyebrow">Premium analytics</span><h3>Ricavi lordi vs vendita netta</h3></div></div>
-            <canvas id="revenueChart" width="640" height="320" aria-label="Grafico ricavi"></canvas>
-          </article>
-          <article class="card chart-card">
-            <div class="card-header"><div><span class="eyebrow">Premium analytics</span><h3>Margine per categoria</h3></div></div>
-            <canvas id="categoryMarginChart" width="640" height="320" aria-label="Grafico margini categoria"></canvas>
-          </article>
-          <article class="card chart-card">
-            <div class="card-header"><div><span class="eyebrow">Premium analytics</span><h3>Trend utile mensile</h3></div></div>
-            <canvas id="profitTrendChart" width="640" height="320" aria-label="Trend utile"></canvas>
-          </article>
-          <article class="card chart-card">
-            <div class="card-header"><div><span class="eyebrow">Insight</span><h3>Classifica categorie</h3></div></div>
-            <div id="categoryRanking" class="ranking-list"></div>
-          </article>
+          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3 data-i18n="dashboard.revenueChart">Ricavi lordi vs vendita netta</h3></div></div><canvas id="revenueChart" width="640" height="320" aria-label="Revenue chart"></canvas></article>
+          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3 data-i18n="dashboard.categoryChart">Margine per categoria</h3></div></div><canvas id="categoryMarginChart" width="640" height="320" aria-label="Category margin chart"></canvas></article>
+          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Premium</span><h3 data-i18n="dashboard.trendChart">Trend utile mensile</h3></div></div><canvas id="profitTrendChart" width="640" height="320" aria-label="Profit trend chart"></canvas></article>
+          <article class="card chart-card"><div class="card-header"><div><span class="eyebrow">Insight</span><h3 data-i18n="dashboard.ranking">Classifica categorie</h3></div></div><div id="categoryRanking" class="ranking-list"></div></article>
         </div>
       </section>
 
       <section id="settingsSection" class="app-section hidden">
         <div class="grid two">
           <article class="card">
-            <span class="eyebrow">Account</span>
-            <h3>Profilo</h3>
+            <span class="eyebrow" data-i18n="app.navSettings">Impostazioni</span>
+            <h3 data-i18n="settings.profile">Profilo</h3>
             <form class="form-grid single">
-              <label>Nome utente<input id="profileUsername" type="text" /></label>
-              <label>Email attuale<input id="profileEmail" type="email" disabled /></label>
-              <label>Nuova email<input id="newEmail" type="email" placeholder="nuova@email.com" /></label>
-              <button class="btn primary" id="saveProfile" type="button">Salva profilo</button>
-              <button class="btn" id="changeEmail" type="button">Richiedi cambio email</button>
-              <button class="btn ghost" id="resetPassword" type="button">Invia reset password</button>
-              <button class="btn danger" id="logoutBtn" type="button">Esci</button>
+              <label><span data-i18n="fields.username">Nome utente</span><input id="profileUsername" type="text" /></label>
+              <label><span data-i18n="fields.email">Email attuale</span><input id="profileEmail" type="email" disabled /></label>
+              <label><span data-i18n="fields.newEmail">Nuova email</span><input id="newEmail" type="email" placeholder="nuova@email.com" /></label>
+              <button class="btn primary" id="saveProfile" type="button" data-i18n="settings.saveProfile">Salva profilo</button>
+              <button class="btn" id="changeEmail" type="button" data-i18n="settings.changeEmail">Richiedi cambio email</button>
+              <button class="btn ghost" id="resetPassword" type="button" data-i18n="settings.resetPassword">Invia reset password</button>
+              <button class="btn danger" id="logoutBtn" type="button" data-i18n="settings.logout">Esci</button>
             </form>
           </article>
           <article class="card">
             <span class="eyebrow">Premium</span>
-            <h3>Pagamenti e piano</h3>
+            <h3 data-i18n="settings.payments">Pagamenti e piano</h3>
             <p id="planStatus">Piano attuale: Free</p>
             <div class="payment-placeholder">
-              <strong>Metodi di pagamento</strong>
-              <p>Non ancora attivo. Per produzione useremo Stripe Customer Portal o equivalente, non salveremo carte nel nostro database.</p>
-              <button class="btn" disabled>Gestisci pagamento — coming soon</button>
+              <strong data-i18n="settings.paymentMethods">Metodi di pagamento</strong>
+              <p data-i18n="settings.paymentText">Non ancora attivo. Per produzione useremo Stripe Customer Portal o equivalente, senza salvare carte nel nostro database.</p>
+              <button class="btn" disabled data-i18n="settings.managePayment">Gestisci pagamento — coming soon</button>
             </div>
           </article>
         </div>

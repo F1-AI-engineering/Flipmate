@@ -1,50 +1,73 @@
-# FlipMate V6 — Auth, stock tracker, filtri e premium analytics
+# FlipMate V7 — Multilingual responsive SaaS MVP
 
-FlipMate è una web app statica collegata a Supabase per calcolare margini, salvare stock/vendite e analizzare performance per reselling online.
+FlipMate è una web app statica GitHub Pages collegata a Supabase Auth + Postgres.
 
-## Novità V6
+## Novità V7
 
-- Salvataggio prodotto consentito solo con stato `In stock`.
-- Aggiornamento stato direttamente dal Database: `In stock`, `In vendita`, `Venduto`, `Archiviato`.
-- Filtri database per:
-  - modalità analisi;
-  - categoria;
-  - stato;
-  - prezzo vendita min/max;
-  - utile min/max;
-  - costo acquisto min/max.
-- Export CSV filtrato.
-- Dashboard con grafici:
-  - ricavi lordi venduti;
-  - vendita netta stimata;
-  - margine per categoria;
-  - trend utile mensile;
-  - classifica categorie.
-- Supporto modalità operative:
-  - Solo Vinted;
-  - Solo eBay;
-  - Vinted + eBay.
+- Selettore lingua Italiano / Inglese.
+- Video demo italiano e video demo inglese (`assets/demo-it.mp4`, `assets/demo-en.mp4`).
+- Layout responsive per desktop, tablet e smartphone.
+- Login e registrazione separati:
+  - `login.html`
+  - `signup.html`
+  - `app.html`
+- Home interna app con sole caselle analytics.
+- Dashboard separata con caselle KPI + grafici.
+- KPI globali in alto in tutte le sezioni app:
+  - Pezzi in stock
+  - Costi sostenuti
+  - Vendita probabile
+  - Vendita netta
+  - Utile
+- Database con filtri e aggiornamento stato singolo prodotto.
+- Pulsante “Aggiorna tutto” per impostare uno stato su tutti i prodotti filtrati.
+- Categorie più generali:
+  - Action figure
+  - LEGO
+  - Carte collezionabili
+  - Videogiochi
+  - Manga e artbook
+  - Vestiti
+  - Cosmetici
+  - Libri
+  - Oggetti comuni
+  - Vintage
+  - Elettronica
+  - Altro
 
-## Deploy
+## File principali
 
-1. Carica i file in root del repository GitHub Pages.
-2. Mantieni il file `supabase-config.js` con le tue chiavi pubbliche Supabase.
-3. Non caricare mai la `service_role key`.
-4. Se arrivi da V5, non serve migrazione obbligatoria: la V6 usa colonne già presenti in `products`.
+- `index.html` — landing pubblica.
+- `signup.html` — pagina registrazione.
+- `login.html` — pagina accesso.
+- `app.html` — area app dopo login.
+- `app.js` — logica auth, calcolo, database, lingua, dashboard.
+- `styles.css` — UI responsive.
+- `supabase-config.js` — URL e chiave pubblica Supabase.
+- `sql/` — script Supabase già usati nelle versioni precedenti.
 
-## Test consigliati
+## Migrazione Supabase
 
-1. Login utente A.
-2. Prova a salvare prodotto con stato `Da valutare`: deve dare errore.
-3. Imposta stato `In stock`: deve salvare.
-4. Vai nel Database e cambia stato in `In vendita` o `Venduto`.
-5. Verifica Dashboard e grafici.
-6. Login utente B e verifica che non veda dati utente A.
+Se arrivi da V6 funzionante, non serve una nuova migrazione obbligatoria.
+La V7 usa le stesse colonne `products` e `profiles`.
 
-## Sicurezza
+## Deploy GitHub Pages
 
-- Password gestite da Supabase Auth.
-- RLS richiesta su `products` e `profiles`.
-- Ogni utente vede solo le proprie righe.
-- Export CSV protetto contro CSV formula injection.
-- Premium/pagamenti restano da implementare con backend/Stripe per produzione.
+1. Estrai lo ZIP.
+2. Carica i file nella root del repository.
+3. Mantieni il tuo `supabase-config.js` con URL e chiave pubblica.
+4. Commit.
+5. GitHub Pages aggiorna il sito.
+
+## Test minimo
+
+1. Apri `index.html` online.
+2. Cambia lingua in EN e verifica cambio video.
+3. Fai una prova gratuita.
+4. Registrati su `signup.html`.
+5. Entra in `app.html`.
+6. Salva prodotto solo con stato `In stock`.
+7. Vai in Database.
+8. Filtra prodotti.
+9. Usa `Aggiorna tutto` sui prodotti filtrati.
+10. Vai in Home e Dashboard e verifica KPI/grafici.
